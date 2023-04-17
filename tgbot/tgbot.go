@@ -97,12 +97,12 @@ func (bot *Bot) Update(done <-chan bool) {
 	updates := bot.BotApi.GetUpdatesChan(u)
 	go func() {
 		for update := range updates {
+			time.Sleep(25 * time.Millisecond)
 			select {
 			case <-done:
 				return
 			default:
 			}
-			bot.ShowUpdateInfo(update)
 			if update.Message != nil && update.Message.Text != "" {
 				bot.CheckChatSettings(update)
 				if update.Message.IsCommand() {
@@ -369,8 +369,11 @@ func (bot *Bot) LoadDump() {
 		log.Fatal("Error during Unmarshal(): ", err)
 	}
 
+	log.Println("reading dump...")
 	var needToSave bool
 	for key, chat := range bot.Chats {
+		log.Println("reading dump... " + chat.ChatName)
+
 		bot.Swatter[key], err = swatter.NewFromDump(chat.ChatName + ".blob")
 		if err != nil {
 			bot.Swatter[key], err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
@@ -381,6 +384,7 @@ func (bot *Bot) LoadDump() {
 		}
 	}
 	if needToSave {
+		log.Println("saving dump...")
 		bot.SaveDump()
 	}
 	//bot.FixChats()
@@ -459,7 +463,7 @@ func (bot *Bot) Dumper(done <-chan bool) {
 	ticker := time.NewTicker(dumpTick)
 	go func() {
 		for {
-			//time.Sleep(25 * time.Millisecond)
+			time.Sleep(25 * time.Millisecond)
 			select {
 			case <-done:
 				bot.BotApi.StopReceivingUpdates()

@@ -19,7 +19,8 @@ func ComposeTrigram(trigramMap DataStorage, msg string) Trigram {
 	msg = strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(msg, ""))
 	words := strings.Split(msg, " ")
 	var trigram Trigram
-	trigram[0] = utils.TrimWord(words[rand.Intn(len(words))])
+	firstWord := words[rand.Intn(len(words))]
+	trigram[0] = utils.TrimWord(firstWord)
 	if trigram[0] == "" {
 		r1 := rand.Intn(len(trigramMap))
 		for word := range trigramMap {
@@ -183,7 +184,7 @@ func (data DataStorage) ReadFile(filename string) error {
 	return err
 }
 func (data DataStorage) SaveDump(filename string) {
-	file, err := os.Create(filename)
+	file, err := os.Create(strings.Trim(filename,"/"))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -197,7 +198,7 @@ func (data DataStorage) SaveDump(filename string) {
 }
 
 func (data DataStorage) LoadDump(filename string) error {
-	f, err := os.Open(filename)
+	f, err := os.Open(strings.Trim(filename,"/"))
 	if err != nil {
 		log.Println(err)
 		return err
