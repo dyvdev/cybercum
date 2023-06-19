@@ -6,6 +6,7 @@ import (
 	"github.com/dyvdev/cybercum/utils"
 	"log"
 	"math/rand"
+	"mvdan.cc/xurls/v2"
 	"os"
 	"regexp"
 	"strconv"
@@ -19,7 +20,7 @@ func ComposeTrigram(trigramMap DataStorage, msg string) Trigram {
 	msg = strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(msg, ""))
 	words := strings.Split(msg, " ")
 	var trigram Trigram
-	firstWord := words[rand.Intn(len(words))]
+	firstWord := GetFirstWord(trigramMap, words)
 	trigram[0] = utils.TrimWord(firstWord)
 	if trigram[0] == "" {
 		r1 := rand.Intn(len(trigramMap))
@@ -51,6 +52,13 @@ func ComposeTrigram(trigramMap DataStorage, msg string) Trigram {
 		}
 	}
 	return trigram
+}
+
+func GetFirstWord(trigramMap DataStorage, words []string) string {
+	if len(words) == 0 {
+		return ""
+	}
+	return words[len(words) - 1]
 }
 
 func GetRandomTrigram(data DataStorage) Trigram {
@@ -112,42 +120,53 @@ func (data DataStorage) AddTrigram(trigram Trigram) {
 }
 
 func (data DataStorage) GenerateText(msg string, length int) string {
-	var last2Words [2]string
+	var last3gram Trigram
 	var text []string
 	if len(data) == 0 {
 		return ""
 	}
 	if len(msg) > 0 {
-		trigram := ComposeTrigram(data, msg)
-		text = append(text, trigram[:]...)
-		last2Words[0] = trigram[1]
-		last2Words[1] = trigram[2]
+		last3gram = ComposeTrigram(data, msg)
+		text = append(text, last3gram[:]...)
 	}
+
 	for i := 0; i < length; i++ {
 		if len(text) > 0 {
-			possibleNextWords := data[last2Words[0]][last2Words[1]]
+			cp := data[last3gram[1]][last3gram[2]]
+			possibleNextWords := make(map[string]int)
+			for key,value := range cp {
+				if key == last3gram[0] {
+					continue
+				}
+				possibleNextWords[key] = value
+			}
 			if len(possibleNextWords) == 0 {
 				break
 			}
 			nextWord := GetRandomWord(possibleNextWords)
 			text = append(text, nextWord)
-			last2Words[0] = last2Words[1]
-			last2Words[1] = nextWord
+			last3gram[0] = last3gram[1]
+			last3gram[1] = last3gram[2]
+			last3gram[2] = nextWord
 		} else {
-			trigram := GetRandomTrigram(data)
-			text = append(text, trigram[:]...)
-			last2Words[0] = trigram[1]
-			last2Words[1] = trigram[2]
+			last3gram := GetRandomTrigram(data)
+			text = append(text, last3gram[:]...)
 		}
 	}
 	return strings.Join(text, " ")
 }
 
 func (data DataStorage) ParseText(text string) {
+	if xurls.Relaxed().FindString(text) != "" {
+		return
+	}
 	text = strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(text, ""))
 	words := strings.Split(text, " ")
 	var trimmedWords []string
 	last := ""
+	if len(words) >= 10 {
+		return
+	}
 	for _, word := range words {
 		word = utils.TrimWord(word)
 		if word != last {

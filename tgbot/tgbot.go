@@ -95,20 +95,20 @@ func (bot *Bot) Update(done <-chan bool) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := bot.BotApi.GetUpdatesChan(u)
+	ticker := time.NewTicker(25 * time.Millisecond)
 	go func() {
 		for update := range updates {
-			time.Sleep(25 * time.Millisecond)
 			select {
 			case <-done:
 				return
-			default:
-			}
-			if update.Message != nil && update.Message.Text != "" {
-				bot.CheckChatSettings(update)
-				if update.Message.IsCommand() {
-					bot.Commands(update)
-				} else {
-					bot.ProcessMessage(update)
+			case <-ticker.C:
+				if update.Message != nil && update.Message.Text != "" {
+					bot.CheckChatSettings(update)
+					if update.Message.IsCommand() {
+						bot.Commands(update)
+					} else {
+						bot.ProcessMessage(update)
+					}
 				}
 			}
 		}
@@ -347,8 +347,8 @@ func (bot *Bot) SaveDump() {
 	if err != nil {
 		log.Fatal("Error during saving chats: ", err)
 	}
-	for key, chat := range bot.Chats {
-		bot.Swatter[key].SaveDump(chat.ChatName + ".blob")
+	for key, _ := range bot.Chats {
+		bot.Swatter[key].SaveDump(strconv.Itoa(int(key)) + ".blob")
 	}
 }
 
@@ -372,9 +372,9 @@ func (bot *Bot) LoadDump() {
 	log.Println("reading dump...")
 	var needToSave bool
 	for key, chat := range bot.Chats {
-		log.Println("reading dump... " + chat.ChatName)
+		log.Println("reading dump... " + strconv.Itoa(int(key)) + ".blob for chat [" + chat.ChatName + "]")
 
-		bot.Swatter[key], err = swatter.NewFromDump(chat.ChatName + ".blob")
+		bot.Swatter[key], err = swatter.NewFromDump(strconv.Itoa(int(key)) + ".blob")
 		if err != nil {
 			bot.Swatter[key], err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
 			if err != nil {
@@ -463,14 +463,12 @@ func (bot *Bot) Dumper(done <-chan bool) {
 	ticker := time.NewTicker(dumpTick)
 	go func() {
 		for {
-			time.Sleep(25 * time.Millisecond)
 			select {
 			case <-done:
 				bot.BotApi.StopReceivingUpdates()
 				return
 			case <-ticker.C:
 				bot.SaveDump()
-			default:
 			}
 		}
 	}()
