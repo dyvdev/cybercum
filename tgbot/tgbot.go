@@ -3,7 +3,7 @@ package tgbot
 import (
 	"encoding/json"
 	"github.com/dyvdev/cybercum/swatter"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
 	"math/rand"
 	"os"
