@@ -19,14 +19,16 @@ const (
 )
 
 type Config struct {
-	BotId               string   // айди бота от ОтцаБОтов
-	Ratio               int      // количество сообщений между ответами бота
-	Length              int      // длина сообщений генератора цепей
-	EnableSemen         bool     // включить генерацию фраз
-	EnablePhrases       bool     //включить фиксированные фразы
-	MainCum             string   // ник владельца
-	DefaultPhrases      []string // список фраз
-	DefaultDataFileName string   // текстовый файл из которого берутся базовые данные
+	BotId   string // айди бота от ОтцаБОтов
+	MainCum string // ник владельца
+
+	EnablePhrases  bool     // включить фиксированные фразы
+	DefaultPhrases []string // список фраз
+
+	EnableSemen         bool   // включить генерацию фраз
+	Ratio               int    // количество сообщений между ответами бота
+	Length              int    // длина сообщений генератоа цепей
+	DefaultDataFileName string // текстовый файл из которого берутся базовые данные
 }
 type Chat struct {
 	ChatName       string

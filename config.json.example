@@ -1,0 +1,11 @@
+{
+  "BotId": "",
+  "Ratio": 50,
+  "Length": 10,
+  "EnableSemen": true,
+  "EnablePhrases": false,
+  "MainCum": "admin",
+  "DefaultPhrases": [
+  ],
+  "DefaultDataFileName": "mh.txt"
+}
