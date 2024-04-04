@@ -26,6 +26,7 @@ func LoadConfig(path string) (*Config, error) {
 	v.SetConfigFile(path)
 
 	err := v.ReadInConfig()
+
 	if err != nil {
 		return nil, errors.Wrap(err, "read config")
 	}
@@ -44,6 +45,10 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, errors.Wrap(err, "unmarshal config")
 	}
 	setDefaults(config)
+
+	if err := Validate(config); err != nil {
+		return nil, errors.Wrap(err, "validate config")
+	}
 
 	return config, nil
 }
