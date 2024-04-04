@@ -3,6 +3,7 @@ package tgbot
 import (
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
+	"math/rand"
 	"modernc.org/mathutil"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ const (
 		phrase_remove - убрать фразу по номеру
 		ratio - частота сообщений(50 значит, что бот будет писать раз в 50 сообщений)
 		length - длина сгенерированных сообщений
+		roll - написать число от 0 до N
 	*/
 	commandAddCum        = "add_cum"
 	commandEnableSemen   = "enable_semen"
@@ -26,10 +28,20 @@ const (
 	commandFixedRemove   = "phrase_remove"
 	commandRatio         = "ratio"
 	commandLength        = "length"
+	commandRoll          = "roll"
 )
 
 func (bot *Bot) Commands(update tgbotapi.Update) {
 	chat := bot.Chats[update.FromChat().ID]
+	switch update.Message.Command() {
+	case commandRoll:
+		n, err := strconv.Atoi(strings.TrimSpace(update.Message.CommandArguments()))
+		if err == nil && n > 0 {
+			bot.Reply(strconv.Itoa(rand.Intn(n)), update.Message)
+		} else {
+			bot.Reply(strconv.Itoa(rand.Intn(100000000)), update.Message)
+		}
+	}
 	if bot.IsCum(update.Message) {
 		switch update.Message.Command() {
 		case commandAddCum:

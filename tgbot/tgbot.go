@@ -95,6 +95,9 @@ func (bot *Bot) Update(done <-chan bool) {
 					continue
 				}
 				//continue
+				if update.MessageReaction != nil {
+					bot.ProcessReaction(update)
+				}
 				if update.Message != nil {
 					if update.Message.Photo != nil && rand.Intn(15) == 1 {
 						bot.SendPhotoReaction(update)
@@ -130,12 +133,23 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		chat.Counter = 0
 	} else if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
-		if isTimeToTalk || isReply || bot.BotApi.IsMessageToMe(*update.Message) {
+		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
+		if isTimeToTalk || isReply || isMessageToMe {
+			// всегда отвечаем на вопрос к нам
+			if (isMessageToMe || isReply) && bot.SendAnswer(update) {
+				return
+			}
 			chat.Counter = 0
 			if rand.Intn(10) == 1 {
+				// если есть вопрос, ответим
+				if bot.SendAnswer(update) {
+					return
+				}
 				txt := strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(update.Message.Text, ""))
+				// попытаемся скаламбурить
 				txt = shakeSpear(txt)
 				if txt == "" {
+					// если не вышло, просто генерим фразу как обычно
 					bot.SemenMessageSend(update, isReply)
 					return
 				}
@@ -152,6 +166,11 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	}
 }
 
+func (bot *Bot) ProcessReaction(update tgbotapi.Update) {
+	if update.MessageReaction.NewReaction != nil && update.MessageReaction.NewReaction[0].Emoji == "❤" {
+		//
+	}
+}
 func (bot *Bot) SemenMessageSend(update tgbotapi.Update, isReply bool) {
 	msg := bot.GenerateMessage(update.Message)
 	if msg == nil {

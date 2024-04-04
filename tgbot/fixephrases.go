@@ -18,7 +18,7 @@ func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message) {
 				MessageThreadID:  threadId,
 				ReplyToMessageID: 0,
 			},
-			Text:                  chat.FixedPhrases[rand.Intn(len(chat.FixedPhrases)-1)],
+			Text:                  chat.FixedPhrases[rand.Intn(len(chat.FixedPhrases))],
 			DisableWebPagePreview: false,
 		})
 	}
