@@ -3,7 +3,7 @@ package swatter
 import (
 	"bufio"
 	"encoding/gob"
-	"github.com/dyvdev/cybercum/utils"
+	"github.com/dyvdev/cybercum/internal/utils"
 	"log"
 	"math/rand"
 	"mvdan.cc/xurls/v2"
@@ -58,7 +58,7 @@ func GetFirstWord(trigramMap DataStorage, words []string) string {
 	if len(words) == 0 {
 		return ""
 	}
-	return words[len(words) - 1]
+	return words[len(words)-1]
 }
 
 func GetRandomTrigram(data DataStorage) Trigram {
@@ -134,7 +134,7 @@ func (data DataStorage) GenerateText(msg string, length int) string {
 		if len(text) > 0 {
 			cp := data[last3gram[1]][last3gram[2]]
 			possibleNextWords := make(map[string]int)
-			for key,value := range cp {
+			for key, value := range cp {
 				if key == last3gram[0] {
 					continue
 				}
@@ -203,7 +203,7 @@ func (data DataStorage) ReadFile(filename string) error {
 	return err
 }
 func (data DataStorage) SaveDump(filename string) {
-	file, err := os.Create(strings.Trim(filename,"/"))
+	file, err := os.Create(strings.Trim(filename, "/"))
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -217,7 +217,7 @@ func (data DataStorage) SaveDump(filename string) {
 }
 
 func (data DataStorage) LoadDump(filename string) error {
-	f, err := os.Open(strings.Trim(filename,"/"))
+	f, err := os.Open(strings.Trim(filename, "/"))
 	if err != nil {
 		log.Println(err)
 		return err

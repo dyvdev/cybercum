@@ -2,7 +2,7 @@ package tgbot
 
 import (
 	"encoding/json"
-	"github.com/dyvdev/cybercum/swatter"
+	"github.com/dyvdev/cybercum/internal/swatter"
 	"log"
 	"os"
 	"strconv"

@@ -1,7 +1,8 @@
-package cybercum
+package internal
 
 import (
-	"github.com/dyvdev/cybercum/tgbot"
+	"github.com/dyvdev/cybercum/internal/config"
+	"github.com/dyvdev/cybercum/internal/tgbot"
 	"log"
 	"os"
 	"os/signal"
@@ -10,7 +11,11 @@ import (
 
 func ReadBot(cfgFile string) {
 	log.Println("starting...")
-	bot := tgbot.NewBot()
+	bot, err := tgbot.NewBot(nil)
+	if err != nil {
+		log.Fatalf("create bot: %s", err.Error())
+	}
+
 	log.Println("reading...")
 	//bot.Swatter.ReadFile("mh.txt")
 	log.Println("saving...")
@@ -19,17 +24,25 @@ func ReadBot(cfgFile string) {
 }
 
 func CleanBot() {
-	bot := tgbot.NewBot()
+	bot, err := tgbot.NewBot(nil)
+	if err != nil {
+		log.Fatalf("create bot: %s", err.Error())
+	}
+
 	bot.Clean()
 	bot.SaveDump()
 }
 
-func RunBot() {
+func RunBot(cfg *config.Config) {
 	log.Println("starting...")
 	done := make(chan bool)
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGTERM)
-	bot := tgbot.NewBot()
+	bot, err := tgbot.NewBot(cfg)
+	if err != nil {
+		log.Fatalf("create bot: %s", err.Error())
+	}
+
 	bot.Update(done)
 	bot.Dumper(done)
 	<-sigc

@@ -1,9 +1,11 @@
 package main
 
 import (
-	cum "github.com/dyvdev/cybercum"
-	"github.com/dyvdev/cybercum/swatter"
-	"github.com/dyvdev/cybercum/utils"
+	"flag"
+	cum "github.com/dyvdev/cybercum/internal"
+	"github.com/dyvdev/cybercum/internal/config"
+	"github.com/dyvdev/cybercum/internal/swatter"
+	"github.com/dyvdev/cybercum/internal/utils"
 	"log"
 	"math/rand"
 	"os"
@@ -11,9 +13,18 @@ import (
 )
 
 func main() {
+	cfgPath := flag.String("c", "", "path to config file")
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
+
 	//cum.ReadBot()
-	cum.RunBot()
+	cfg, err := config.LoadConfig(*cfgPath)
+	if err != nil {
+		log.Fatalf("cant load config: %s", err.Error())
+	}
+
+	cum.RunBot(cfg)
 	//cum.CleanBot()
 	//test()
 	//testChatHistoryGen()

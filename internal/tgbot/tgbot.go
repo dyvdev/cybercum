@@ -2,8 +2,10 @@ package tgbot
 
 import (
 	"encoding/json"
-	"github.com/dyvdev/cybercum/swatter"
+	"github.com/dyvdev/cybercum/internal/config"
+	"github.com/dyvdev/cybercum/internal/swatter"
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
+	"github.com/pkg/errors"
 	"log"
 	"math/rand"
 	"os"
@@ -18,18 +20,6 @@ const (
 	nefren    = "CAACAgIAAx0CTK3KYQACAQNjDKmYViPp5K-PWxuUKUDpwg0vQQAC9hEAAqx6iEqOhkQYAe2vbSkE"
 )
 
-type Config struct {
-	BotId   string // айди бота от ОтцаБОтов
-	MainCum string // ник владельца
-
-	EnablePhrases  bool     // включить фиксированные фразы
-	DefaultPhrases []string // список фраз
-
-	EnableSemen         bool   // включить генерацию фраз
-	Ratio               int    // количество сообщений между ответами бота
-	Length              int    // длина сообщений генератоа цепей
-	DefaultDataFileName string // текстовый файл из которого берутся базовые данные
-}
 type Chat struct {
 	ChatName       string
 	CanTalkSemen   bool
@@ -46,25 +36,24 @@ type Bot struct {
 	BotApi *tgbotapi.BotAPI
 	Timer  time.Time
 	Pause  time.Duration
-	Cfg    Config
+	Cfg    *config.Config
 
 	Chats map[int64]*Chat
 
 	Swatter map[int64]*swatter.DataStorage
 }
 
-func NewBot() *Bot {
+func NewBot(cfg *config.Config) (*Bot, error) {
 	bot := Bot{}
-	bot.LoadConfig()
+	bot.Cfg = cfg
 	log.Println(bot.Cfg)
 	if bot.Cfg.BotId == "" {
-		panic("error creating new bot")
+		return nil, errors.New("check bot id")
 	}
 	bapi, err := tgbotapi.NewBotAPI(bot.Cfg.BotId)
 	if err != nil {
 		log.Println("id: ", bot.Cfg.BotId)
-		log.Fatal("starting tg bot error: ", err)
-		return nil
+		return nil, errors.Wrap(err, "start tgbot api")
 	}
 	bot.BotApi = bapi
 	bot.Swatter = map[int64]*swatter.DataStorage{}
@@ -72,7 +61,7 @@ func NewBot() *Bot {
 	bot.LoadDump()
 	bot.Pause = 15 * time.Second
 	bot.Timer = time.Now().UTC().Add(bot.Pause)
-	return &bot
+	return &bot, nil
 }
 
 func (bot *Bot) Update(done <-chan bool) {
