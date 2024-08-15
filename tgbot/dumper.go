@@ -5,13 +5,12 @@ import (
 	"github.com/dyvdev/cybercum/swatter"
 	"log"
 	"os"
-	"strconv"
 	"time"
 )
 
 const (
-	dumpTick   = time.Hour
-	saveFolder = "blobs/"
+	dumpTick = time.Hour
+	saveDump = "blobs/save.blob"
 )
 
 func (bot *Bot) Dumper(done <-chan bool) {
@@ -36,9 +35,7 @@ func (bot *Bot) SaveDump() {
 	if err != nil {
 		log.Fatal("Error during saving chats: ", err)
 	}
-	for key, _ := range bot.Chats {
-		bot.Swatter[key].SaveDump(saveFolder + strconv.Itoa(int(key)) + ".blob")
-	}
+	bot.Swatter.SaveDump(saveDump)
 }
 
 func (bot *Bot) LoadDump() {
@@ -62,17 +59,13 @@ func (bot *Bot) LoadDump() {
 
 	log.Println("reading dump...")
 	var needToSave bool
-	for key, chat := range bot.Chats {
-		log.Println("reading dump... " + saveFolder + strconv.Itoa(int(key)) + ".blob for chat [" + chat.ChatName + "]")
-
-		bot.Swatter[key], err = swatter.NewFromDump(saveFolder + strconv.Itoa(int(key)) + ".blob")
+	bot.Swatter, err = swatter.NewFromDump(saveDump)
+	if err != nil {
+		bot.Swatter, err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
 		if err != nil {
-			bot.Swatter[key], err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
-			if err != nil {
-				log.Fatal("Error creating new swatter ", err)
-			}
-			needToSave = true
+			log.Fatal("Error creating new swatter ", err)
 		}
+		needToSave = true
 	}
 	if needToSave {
 		log.Println("saving dump...")

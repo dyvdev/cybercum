@@ -50,7 +50,7 @@ type Bot struct {
 
 	Chats map[int64]*Chat
 
-	Swatter map[int64]*swatter.DataStorage
+	Swatter *swatter.DataStorage
 }
 
 func NewBot() *Bot {
@@ -67,7 +67,7 @@ func NewBot() *Bot {
 		return nil
 	}
 	bot.BotApi = bapi
-	bot.Swatter = map[int64]*swatter.DataStorage{}
+	bot.Swatter = &swatter.DataStorage{}
 	bot.Chats = map[int64]*Chat{}
 	bot.LoadDump()
 	bot.Pause = 15 * time.Second
@@ -193,7 +193,7 @@ func (bot *Bot) SemenMessageSend(update tgbotapi.Update, isReply bool) {
 }
 
 func (bot *Bot) GenerateMessage(message *tgbotapi.Message) tgbotapi.Chattable {
-	msg := bot.Swatter[message.Chat.ID].GenerateText(message.Text, bot.Chats[message.Chat.ID].SemenLength)
+	msg := bot.Swatter.GenerateText(message.Text, bot.Chats[message.Chat.ID].SemenLength)
 	threadId := 0
 	if message.Chat.IsForum && message.MessageThreadID != 0 {
 		threadId = message.MessageThreadID
@@ -213,7 +213,7 @@ func (bot *Bot) GenerateMessage(message *tgbotapi.Message) tgbotapi.Chattable {
 }
 
 func (bot *Bot) Learning(message *tgbotapi.Message) {
-	bot.Swatter[message.Chat.ID].ParseText(message.Text)
+	bot.Swatter.ParseText(message.Text)
 }
 
 func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
@@ -298,9 +298,7 @@ func (bot *Bot) FixChats() {
 }
 
 func (bot *Bot) Clean() {
-	for key, _ := range bot.Chats {
-		bot.Swatter[key].Clean()
-	}
+	bot.Swatter.Clean()
 }
 
 func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
@@ -324,7 +322,7 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 			lastMessageId:  atomic.Uint64{},
 		}
 		var err error
-		bot.Swatter[update.FromChat().ID], err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
+		bot.Swatter, err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
 		if err != nil {
 			log.Fatal("Error creating new swatter ", err)
 		}
