@@ -30,15 +30,19 @@ func (bot *Bot) Dumper(done <-chan bool) {
 }
 
 func (bot *Bot) SaveDump() {
-	cfgJson, _ := json.Marshal(bot.Chats)
-	err := os.WriteFile("chats.json", cfgJson, 0644)
+	cfgJson, err := json.Marshal(bot.Chats)
+	if err != nil {
+		log.Println("error saving dump: ", err)
+		return
+	}
+	err = os.WriteFile("chats.json", cfgJson, 0644)
 	if err != nil {
 		log.Fatal("Error during saving chats: ", err)
 	}
 	bot.Swatter.SaveDump(saveDump)
 }
 
-func (bot *Bot) LoadDump() {
+func (bot *Bot) LoadDump() error {
 	log.Println("reading chats...")
 	content, err := os.ReadFile("chats.json")
 	if err != nil {
@@ -49,12 +53,12 @@ func (bot *Bot) LoadDump() {
 			log.Fatal("Error during saving chats: ", err)
 		}
 		log.Println("...created new")
-		return
+		return err
 	}
 	err = json.Unmarshal(content, &bot.Chats)
 	if err != nil {
 		log.Println("Empty chats or error during Unmarshal(): ", err)
-		return
+		return err
 	}
 
 	log.Println("reading dump...")
@@ -73,4 +77,5 @@ func (bot *Bot) LoadDump() {
 	}
 	//bot.FixChats()
 	log.Println("reading chats...done")
+	return nil
 }

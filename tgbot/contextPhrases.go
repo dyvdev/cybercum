@@ -24,6 +24,8 @@ func (bot *Bot) SendAnswer(update tgbotapi.Update) bool {
 		str := "да"
 		if rand.Intn(10) == 1 {
 			str = "ебёт тебя?"
+		} else if rand.Intn(5) == 1 {
+			str = "да ты заебал уже всех со своими вопросами"
 		} else if rand.Intn(2) == 0 {
 			str = "нет"
 		}

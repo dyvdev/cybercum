@@ -69,7 +69,9 @@ func NewBot() *Bot {
 	bot.BotApi = bapi
 	bot.Swatter = &swatter.DataStorage{}
 	bot.Chats = map[int64]*Chat{}
-	bot.LoadDump()
+	if err = bot.LoadDump(); err != nil {
+		return nil
+	}
 	bot.Pause = 15 * time.Second
 	bot.Timer = time.Now().UTC().Add(bot.Pause)
 	return &bot
@@ -94,7 +96,10 @@ func (bot *Bot) Update(done <-chan bool) {
 					bot.BotApi.Leave(update.FromChat())
 					continue
 				}
+				//========= раскоментировать для дебага:
+				//bot.CheckChatSettings(update)
 				//continue
+				//=========
 				if update.MessageReaction != nil {
 					bot.ProcessReaction(update)
 				}
@@ -140,11 +145,9 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 				return
 			}
 			chat.Counter = 0
-			if rand.Intn(10) == 1 {
-				// если есть вопрос, ответим
-				if bot.SendAnswer(update) {
-					return
-				}
+			if bot.SendAnswer(update) {
+				return
+			} else if rand.Intn(10) == 1 {
 				txt := strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(update.Message.Text, ""))
 				// попытаемся скаламбурить
 				txt = shakeSpear(txt)
@@ -303,13 +306,13 @@ func (bot *Bot) Clean() {
 
 func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 	_, ok := bot.Chats[update.FromChat().ID]
+	chatName := update.FromChat().Title
+	if chatName == "" {
+		chatName = update.FromChat().UserName
+	}
 	// если впервые в чате, зададим дефолтный конфиг
 	if !ok {
-		log.Println("new chat: ", update.FromChat().ID)
-		chatName := update.FromChat().Title
-		if chatName == "" {
-			chatName = update.FromChat().UserName
-		}
+		log.Println("new chat: ", update.FromChat().ID, chatName)
 		bot.Chats[update.FromChat().ID] = &Chat{
 			ChatName:       chatName,
 			CanTalkSemen:   bot.Cfg.EnableSemen,
@@ -321,12 +324,7 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 			Cums:           []string{bot.Cfg.MainCum},
 			lastMessageId:  atomic.Uint64{},
 		}
-		var err error
-		bot.Swatter, err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
-		if err != nil {
-			log.Fatal("Error creating new swatter ", err)
-		}
 		bot.SaveDump()
 	}
-	bot.Chats[update.FromChat().ID].ChatName = update.FromChat().Title
+	bot.Chats[update.FromChat().ID].ChatName = chatName
 }
