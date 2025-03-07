@@ -54,18 +54,6 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 		case commandEnablePhrases:
 			chat.CanTalkPhrases = update.Message.CommandArguments() == "да"
 			bot.SaveDump()
-		case commandFixed:
-			i := bot.AddFixedPhrase(chat, update.Message.CommandArguments())
-			bot.Reply("id:"+strconv.Itoa(i), update.Message)
-		case commandFixedRemove:
-			id, err := strconv.Atoi(strings.TrimSpace(update.Message.CommandArguments()))
-			if err != nil {
-				bot.Reply(strconv.Itoa(len(chat.FixedPhrases)), update.Message)
-			} else {
-				i := bot.RemoveFixedPhrase(chat, id)
-				bot.Reply("left:"+strconv.Itoa(i), update.Message)
-				bot.SaveDump()
-			}
 		case commandRatio:
 			ratio, err := strconv.Atoi(strings.TrimSpace(update.Message.CommandArguments()))
 			if err != nil {
@@ -82,6 +70,8 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 				chat.SemenLength = mathutil.Clamp(length, 1, maxLength)
 				bot.SaveDump()
 			}
+		case commandFixed:
+		case commandFixedRemove:
 		default:
 			//bot.Reply("не понял" + update.Message.Command(), update.Message)
 			log.Println(update.FromChat().UserName + " " + update.Message.From.UserName + " " + update.Message.Command())

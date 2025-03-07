@@ -1,12 +1,12 @@
 package tgbot
 
 import (
-	"regexp"
+	"github.com/dyvdev/cybercum/utils"
 	"strings"
 )
 
 func shakeSpear(str string) string {
-	str = strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(str, ""))
+	str = utils.CleanText(str)
 	words := strings.Split(str, " ")
 	if len(words) == 0 {
 		return ""

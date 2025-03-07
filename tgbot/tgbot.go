@@ -3,12 +3,11 @@ package tgbot
 import (
 	"encoding/json"
 	"github.com/dyvdev/cybercum/swatter"
+	"github.com/dyvdev/cybercum/utils"
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
 	"math/rand"
 	"os"
-	"regexp"
-	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -22,8 +21,8 @@ type Config struct {
 	BotId   string // айди бота от ОтцаБОтов
 	MainCum string // ник владельца
 
-	EnablePhrases  bool     // включить фиксированные фразы
-	DefaultPhrases []string // список фраз
+	EnablePhrases          bool   // включить фиксированные фразы
+	DefaultPhrasesFilename string // список фраз
 
 	EnableSemen         bool   // включить генерацию фраз
 	Ratio               int    // количество сообщений между ответами бота
@@ -37,7 +36,7 @@ type Chat struct {
 	Ratio          int //количество сообщений между ответами бота
 	Counter        int //счетчик сообщений в чате
 	SemenLength    int
-	FixedPhrases   []string
+	Filename       string
 	Cums           []string
 	lastMessageId  atomic.Uint64
 }
@@ -133,6 +132,10 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		return
 	}
 
+	if utils.CheckForUrls(update.Message) {
+		return
+	}
+
 	if isTimeToTalk && chat.CanTalkPhrases {
 		bot.SendFixedPhrase(update.Message)
 		chat.Counter = 0
@@ -148,7 +151,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			if bot.SendAnswer(update) {
 				return
 			} else if rand.Intn(10) == 1 {
-				txt := strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(update.Message.Text, ""))
+				txt := utils.CleanText(update.Message.Text)
 				// попытаемся скаламбурить
 				txt = shakeSpear(txt)
 				if txt == "" {
@@ -320,7 +323,7 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 			Ratio:          bot.Cfg.Ratio,
 			Counter:        0,
 			SemenLength:    bot.Cfg.Length,
-			FixedPhrases:   bot.Cfg.DefaultPhrases,
+			Filename:       bot.Cfg.DefaultPhrasesFilename,
 			Cums:           []string{bot.Cfg.MainCum},
 			lastMessageId:  atomic.Uint64{},
 		}

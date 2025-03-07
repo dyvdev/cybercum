@@ -1,42 +1,72 @@
 package tgbot
 
 import (
+	"encoding/json"
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
+	"log"
 	"math/rand"
+	"os"
+	"strings"
 )
 
 func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message) {
 	chat := bot.Chats[message.Chat.ID]
-	if len(chat.FixedPhrases) != 0 {
-		threadId := 0
-		if message.Chat.IsForum && message.MessageThreadID != 0 {
-			threadId = message.MessageThreadID
-		}
-		bot.SendMessage(tgbotapi.MessageConfig{
-			BaseChat: tgbotapi.BaseChat{
-				ChatID:           message.Chat.ID,
-				MessageThreadID:  threadId,
-				ReplyToMessageID: 0,
-			},
-			Text:                  chat.FixedPhrases[rand.Intn(len(chat.FixedPhrases))],
-			DisableWebPagePreview: false,
-		})
+	txt := AnswerWithFixedPhrase(chat.Filename, message.Text)
+	threadId := 0
+	if txt == "" {
+		return
 	}
-}
-func (bot *Bot) AddFixedPhrase(chat *Chat, str string) int {
-	if str != "" {
-		chat.FixedPhrases = append(chat.FixedPhrases, str)
-		bot.SaveDump()
-		return len(chat.FixedPhrases) - 1
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		threadId = message.MessageThreadID
 	}
-	return -1
+	bot.SendMessage(tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{
+			ChatID:           message.Chat.ID,
+			MessageThreadID:  threadId,
+			ReplyToMessageID: 0,
+		},
+		Text:                  txt,
+		DisableWebPagePreview: false,
+	})
 }
 
-func (bot *Bot) RemoveFixedPhrase(chat *Chat, id int) int {
-	if id > -1 && id < len(chat.FixedPhrases) {
-		chat.FixedPhrases = append(chat.FixedPhrases[:id], chat.FixedPhrases[id+1:]...)
-		bot.SaveDump()
-		return len(chat.FixedPhrases)
+type Phrase struct {
+	Chance  int
+	Phrases []string
+}
+
+func LoadPhrases(filename string) (phrases map[string][]*Phrase) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatal("Error when opening file: ", err)
 	}
-	return -1
+	err = json.Unmarshal(content, &phrases)
+	if err != nil {
+		log.Fatal("Error during Unmarshal(): ", err)
+	}
+	return
+}
+
+func AnswerWithFixedPhrase(filename string, text string) string {
+	phrases := LoadPhrases(filename)
+	for key, _ := range phrases {
+		if key != "" {
+			if strings.Contains(text, key) {
+				return GetWeightedAnswer(phrases[key])
+			}
+		}
+	}
+	return GetWeightedAnswer(phrases[""])
+}
+
+func GetWeightedAnswer(phrases []*Phrase) (str string) {
+	rnd := rand.Intn(100)
+	for _, pp := range phrases {
+		if rnd < pp.Chance {
+			n := rand.Intn(len(pp.Phrases))
+			return pp.Phrases[n]
+		}
+		rnd = rnd - pp.Chance
+	}
+	return ""
 }

@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	f, err := os.OpenFile("log.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -18,12 +19,7 @@ func main() {
 	defer f.Close()
 
 	log.SetOutput(f)
-	rand.Seed(time.Now().UnixNano())
-	//cum.ReadBot()
 	cum.RunBot()
-	//cum.CleanBot()
-	//test()
-	//testChatHistoryGen()
 }
 
 func testChatHistoryGen() {

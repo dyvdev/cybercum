@@ -2,8 +2,11 @@ package utils
 
 import (
 	"encoding/json"
+	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
+	"mvdan.cc/xurls/v2"
 	"os"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -89,4 +92,15 @@ func GetTgData(filename string) []string {
 		ret = append(ret, msg.Text)
 	}
 	return ret
+}
+
+func CheckForUrls(message *tgbotapi.Message) bool {
+	if xurls.Relaxed().FindString(message.Text) != "" {
+		return true
+	}
+	return false
+}
+
+func CleanText(str string) string {
+	return strings.ToLower(regexp.MustCompile(`\.|,|;|!|\?`).ReplaceAllString(str, ""))
 }

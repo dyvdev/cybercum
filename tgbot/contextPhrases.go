@@ -16,7 +16,6 @@ func (bot *Bot) SendContextPhrase(update tgbotapi.Update) bool {
 	if len(words) == 0 || len(words) > 25 {
 		return false
 	}
-	//chat := bot.Chats[update.FromChat().ID]
 	return true
 }
 func (bot *Bot) SendAnswer(update tgbotapi.Update) bool {
