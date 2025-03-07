@@ -214,13 +214,13 @@ func (data DataStorage) SaveDump(filename string) {
 func (data DataStorage) LoadDump(filename string) error {
 	f, err := os.Open(strings.Trim(filename, "/"))
 	if err != nil {
-		log.Println(err)
+		log.Println("error load dump file: ", err)
 		return err
 	}
 	defer f.Close()
 	dec := gob.NewDecoder(f)
 	if err := dec.Decode(&data); err != nil {
-		log.Fatal(err)
+		log.Println("error decode blob: ", err)
 		return err
 	}
 	return nil

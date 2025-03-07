@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	dumpTick = time.Hour
-	saveDump = "blobs/save.blob"
+	dumpTick        = time.Hour
+	saveDump        = "blobs/save.blob"
+	saveDumpDefault = "blobs/default.blob"
 )
 
 func (bot *Bot) Dumper(done <-chan bool) {
@@ -65,7 +66,7 @@ func (bot *Bot) LoadDump() error {
 	var needToSave bool
 	bot.Swatter, err = swatter.NewFromDump(saveDump)
 	if err != nil {
-		bot.Swatter, err = swatter.NewFromTextFile(bot.Cfg.DefaultDataFileName)
+		bot.Swatter, err = swatter.NewFromDump(saveDumpDefault)
 		if err != nil {
 			log.Fatal("Error creating new swatter ", err)
 		}
