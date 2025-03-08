@@ -13,6 +13,7 @@ import (
 )
 
 // NewBot конструктор нового бота, загрузка данных чатов
+// NewBot конструктор нового бота, загрузка данных чатов
 func NewBot() *Bot {
 	bot := Bot{}
 	bot.LoadConfig()
@@ -67,7 +68,13 @@ func (bot *Bot) Update(done <-chan bool) {
 					bot.ProcessReaction(update)
 				}
 				if update.Message != nil {
-					if update.Message.Text != "" {
+					if update.FromChat().IsPrivate() {
+						log.Println("private message: ", update.Message)
+						msg := bot.GenerateMessage(update.Message)
+						if msg != nil {
+							bot.SendMessage(msg)
+						}
+					} else if update.Message.Text != "" {
 						if update.Message.IsCommand() {
 							bot.Commands(update)
 						} else {
@@ -88,15 +95,6 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	chat := bot.Chats[update.FromChat().ID]
 	chat.Counter++
 	isTimeToTalk := chat.Ratio == 0 || (chat.Counter > chat.Ratio && bot.Tick())
-	if update.FromChat().IsPrivate() {
-		log.Println("private message: ", update.Message)
-		msg := bot.GenerateMessage(update.Message)
-		if msg == nil {
-			return
-		}
-		bot.SendMessage(msg)
-		return
-	}
 	if chat.CanSendReactions && bot.SendRandomReaction(update) {
 		return
 	}
