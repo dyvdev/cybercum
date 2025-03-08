@@ -69,7 +69,7 @@ func (bot *Bot) Update(done <-chan bool) {
 				}
 				if update.Message != nil {
 					if update.FromChat().IsPrivate() {
-						log.Println("private message: ", update.Message)
+						logMessage(update.Message)
 						msg := bot.GenerateMessage(update.Message)
 						if msg != nil {
 							bot.SendMessage(msg)
@@ -280,4 +280,23 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 		bot.SaveDump()
 	}
 	bot.Chats[update.FromChat().ID].ChatName = chatName
+}
+
+func logMessage(message *tgbotapi.Message) {
+	chatName := message.Chat.Title
+	if chatName == "" {
+		chatName = message.Chat.UserName
+	}
+	log.Println("message log start")
+	log.Println("chatname: ", chatName)
+	if message.Text != "" {
+		log.Println("text: ", message.Text)
+	}
+	if message.Sticker != nil {
+		log.Println("sticker id: ", message.Sticker.FileID)
+	}
+	if message.Audio != nil {
+		log.Println("sticker id: ", message.Audio.FileID)
+	}
+	log.Println("message log end")
 }
