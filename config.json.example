@@ -3,9 +3,9 @@
   "Ratio": 50,
   "Length": 10,
   "EnableSemen": true,
-  "EnablePhrases": false,
+  "EnablePhrases": true,
+  "EnableReactions": true,
   "MainCum": "admin",
-  "DefaultPhrases": [
-  ],
-  "DefaultDataFileName": "mh.txt"
+  "DefaultPhrasesFilename": "phrases.json",
+  "EnableGame": false
 }

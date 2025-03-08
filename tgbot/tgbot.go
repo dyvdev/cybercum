@@ -12,46 +12,7 @@ import (
 	"time"
 )
 
-const (
-	maxLength = 100
-	nefren    = "CAACAgIAAx0CTK3KYQACAQNjDKmYViPp5K-PWxuUKUDpwg0vQQAC9hEAAqx6iEqOhkQYAe2vbSkE"
-)
-
-type Config struct {
-	BotId   string // айди бота от ОтцаБОтов
-	MainCum string // ник владельца
-
-	EnablePhrases          bool   // включить фиксированные фразы
-	DefaultPhrasesFilename string // список фраз
-
-	EnableSemen         bool   // включить генерацию фраз
-	Ratio               int    // количество сообщений между ответами бота
-	Length              int    // длина сообщений генератоа цепей
-	DefaultDataFileName string // текстовый файл из которого берутся базовые данные
-}
-type Chat struct {
-	ChatName       string
-	CanTalkSemen   bool
-	CanTalkPhrases bool
-	Ratio          int //количество сообщений между ответами бота
-	Counter        int //счетчик сообщений в чате
-	SemenLength    int
-	Filename       string
-	Cums           []string
-	lastMessageId  atomic.Uint64
-}
-
-type Bot struct {
-	BotApi *tgbotapi.BotAPI
-	Timer  time.Time
-	Pause  time.Duration
-	Cfg    Config
-
-	Chats map[int64]*Chat
-
-	Swatter *swatter.DataStorage
-}
-
+// NewBot конструктор нового бота, загрузка данных чатов
 func NewBot() *Bot {
 	bot := Bot{}
 	bot.LoadConfig()
@@ -71,11 +32,13 @@ func NewBot() *Bot {
 	if err = bot.LoadDump(); err != nil {
 		return nil
 	}
+	bot.DropCounter()
 	bot.Pause = 15 * time.Second
 	bot.Timer = time.Now().UTC().Add(bot.Pause)
 	return &bot
 }
 
+// Update обработка событий
 func (bot *Bot) Update(done <-chan bool) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -99,19 +62,20 @@ func (bot *Bot) Update(done <-chan bool) {
 				//bot.CheckChatSettings(update)
 				//continue
 				//=========
+				bot.CheckChatSettings(update)
 				if update.MessageReaction != nil {
 					bot.ProcessReaction(update)
 				}
 				if update.Message != nil {
-					if update.Message.Photo != nil && rand.Intn(15) == 1 {
-						bot.SendPhotoReaction(update)
-					} else if update.Message.Text != "" {
-						bot.CheckChatSettings(update)
+					if update.Message.Text != "" {
 						if update.Message.IsCommand() {
 							bot.Commands(update)
 						} else {
 							bot.ProcessMessage(update)
 						}
+					}
+					if update.Message.Photo != nil {
+						bot.SendPhotoReaction(update)
 					}
 				}
 			}
@@ -119,11 +83,13 @@ func (bot *Bot) Update(done <-chan bool) {
 	}()
 }
 
+// ProcessMessage обработка сообщений
 func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	chat := bot.Chats[update.FromChat().ID]
 	chat.Counter++
-	isTimeToTalk := chat.Ratio == 0 || (chat.Counter > chat.Ratio && bot.Tick()) //|| bot.IsCum(update.Message)
+	isTimeToTalk := chat.Ratio == 0 || (chat.Counter > chat.Ratio && bot.Tick())
 	if update.FromChat().IsPrivate() {
+		log.Println("private message: ", update.Message)
 		msg := bot.GenerateMessage(update.Message)
 		if msg == nil {
 			return
@@ -131,13 +97,13 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		bot.SendMessage(msg)
 		return
 	}
-
+	if chat.CanSendReactions && bot.SendRandomReaction(update) {
+		return
+	}
 	if utils.CheckForUrls(update.Message) {
 		return
 	}
-
-	if isTimeToTalk && chat.CanTalkPhrases {
-		bot.SendFixedPhrase(update.Message)
+	if isTimeToTalk && chat.CanTalkPhrases && bot.SendFixedPhrase(update.Message) {
 		chat.Counter = 0
 	} else if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
@@ -150,33 +116,41 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			chat.Counter = 0
 			if bot.SendAnswer(update) {
 				return
-			} else if rand.Intn(10) == 1 {
-				txt := utils.CleanText(update.Message.Text)
-				// попытаемся скаламбурить
-				txt = shakeSpear(txt)
-				if txt == "" {
-					// если не вышло, просто генерим фразу как обычно
-					bot.SemenMessageSend(update, isReply)
-					return
-				}
-				msg := tgbotapi.NewMessage(update.FromChat().ID, txt+"😁")
-				msg.ReplyToMessageID = update.Message.MessageID
-				bot.BotApi.Send(msg)
+			} else if bot.Shakspearing(update) {
+				return
 			} else {
 				bot.SemenMessageSend(update, isReply)
 			}
-			bot.Learning(update.Message)
-		} else {
-			bot.SendRandomReaction(update)
 		}
+		bot.Learning(update.Message)
 	}
 }
 
+// Shakspearing попытка скаламбурить, true если получилось
+func (bot *Bot) Shakspearing(update tgbotapi.Update) bool {
+	if rand.Intn(10) == 1 {
+		txt := utils.CleanText(update.Message.Text)
+		// попытаемся скаламбурить
+		txt = shakeSpear(txt)
+		if txt == "" {
+			return false
+		}
+		msg := tgbotapi.NewMessage(update.FromChat().ID, txt+"😁")
+		msg.ReplyToMessageID = update.Message.MessageID
+		bot.BotApi.Send(msg)
+		return true
+	}
+	return false
+}
+
+// ProcessReaction обработка реакций на сообщения бота
 func (bot *Bot) ProcessReaction(update tgbotapi.Update) {
 	if update.MessageReaction.NewReaction != nil && update.MessageReaction.NewReaction[0].Emoji == "❤" {
-		//
+		log.Println("reaction message: ", update.Message)
 	}
 }
+
+// SemenMessageSend отправка генерируемых сообщений
 func (bot *Bot) SemenMessageSend(update tgbotapi.Update, isReply bool) {
 	msg := bot.GenerateMessage(update.Message)
 	if msg == nil {
@@ -198,6 +172,7 @@ func (bot *Bot) SemenMessageSend(update tgbotapi.Update, isReply bool) {
 	}
 }
 
+// GenerateMessage генерация сообщения
 func (bot *Bot) GenerateMessage(message *tgbotapi.Message) tgbotapi.Chattable {
 	msg := bot.Swatter.GenerateText(message.Text, bot.Chats[message.Chat.ID].SemenLength)
 	threadId := 0
@@ -213,15 +188,14 @@ func (bot *Bot) GenerateMessage(message *tgbotapi.Message) tgbotapi.Chattable {
 		Text:                  msg,
 		DisableWebPagePreview: false,
 	}
-	//else {
-	//    return tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(nefren))
-	//}
 }
 
+// Learning обучение
 func (bot *Bot) Learning(message *tgbotapi.Message) {
 	bot.Swatter.ParseText(message.Text)
 }
 
+// SendMessage отправка сообщения
 func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
 	switch concrete := message.(type) {
 	case tgbotapi.MessageConfig:
@@ -235,18 +209,14 @@ func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
 	}
 }
 
+// Reply отправка ответа на сообщение
 func (bot *Bot) Reply(text string, message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
 	bot.SendMessage(msg)
 }
 
-func (bot *Bot) ReplyNefren(message *tgbotapi.Message) {
-	msg := tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(nefren))
-	msg.ReplyToMessageID = message.MessageID
-	bot.SendMessage(msg)
-}
-
+// Tick таймер
 func (bot *Bot) Tick() bool {
 	isReady := time.Now().UTC().After(bot.Timer)
 	if isReady {
@@ -255,6 +225,7 @@ func (bot *Bot) Tick() bool {
 	return isReady
 }
 
+// LoadConfig загрузка конфига
 func (bot *Bot) LoadConfig() {
 	log.Println("reading config...")
 	content, err := os.ReadFile("config.json")
@@ -268,6 +239,7 @@ func (bot *Bot) LoadConfig() {
 	log.Println("reading config...done")
 }
 
+// SaveConfig сохранение конфига
 func (bot *Bot) SaveConfig() {
 	log.Println("saving config...")
 	cfgJson, _ := json.Marshal(bot.Cfg)
@@ -278,35 +250,14 @@ func (bot *Bot) SaveConfig() {
 	log.Println("saving config...done")
 }
 
-func (bot *Bot) FixChats() {
-	for id, c := range bot.Chats {
-		chat, err := bot.BotApi.GetChat(tgbotapi.ChatInfoConfig{ChatConfig: tgbotapi.ChatConfig{ChatID: id, SuperGroupUsername: ""}})
-		if err == nil {
-			//log.Println(chat)
-			//if chat.IsPrivate() {
-			//	log.Println("deleting " + c.ChatName)
-			//	delete(bot.Chats, id)
-			//}
-			c.ChatName = chat.Title
-			if c.ChatName == "" {
-				c.ChatName = chat.UserName
-			}
-			if c.ChatName == "" {
-				c.ChatName = chat.FirstName + " " + chat.LastName
-			}
-			log.Println("title " + c.ChatName)
-		} else {
-			log.Println("deleting err ")
-			delete(bot.Chats, id)
-		}
+// DropCounter сброс счетчика для всех чатов
+func (bot *Bot) DropCounter() {
+	for _, c := range bot.Chats {
+		c.Counter = 0
 	}
-	bot.SaveDump()
 }
 
-func (bot *Bot) Clean() {
-	bot.Swatter.Clean()
-}
-
+// CheckChatSettings проверка чата на предмет кривого названия или установка настроек по умолчанию для нового чата
 func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 	_, ok := bot.Chats[update.FromChat().ID]
 	chatName := update.FromChat().Title
@@ -317,15 +268,16 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 	if !ok {
 		log.Println("new chat: ", update.FromChat().ID, chatName)
 		bot.Chats[update.FromChat().ID] = &Chat{
-			ChatName:       chatName,
-			CanTalkSemen:   bot.Cfg.EnableSemen,
-			CanTalkPhrases: bot.Cfg.EnablePhrases,
-			Ratio:          bot.Cfg.Ratio,
-			Counter:        0,
-			SemenLength:    bot.Cfg.Length,
-			Filename:       bot.Cfg.DefaultPhrasesFilename,
-			Cums:           []string{bot.Cfg.MainCum},
-			lastMessageId:  atomic.Uint64{},
+			ChatName:         chatName,
+			CanTalkSemen:     bot.Cfg.EnableSemen,
+			CanTalkPhrases:   bot.Cfg.EnablePhrases,
+			CanSendReactions: bot.Cfg.EnableReactions,
+			Ratio:            bot.Cfg.Ratio,
+			Counter:          0,
+			SemenLength:      bot.Cfg.Length,
+			Filename:         bot.Cfg.DefaultPhrasesFilename,
+			Cums:             []string{bot.Cfg.MainCum},
+			lastMessageId:    atomic.Uint64{},
 		}
 		bot.SaveDump()
 	}

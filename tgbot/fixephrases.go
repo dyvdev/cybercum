@@ -9,25 +9,31 @@ import (
 	"strings"
 )
 
-func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message) {
+func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message) bool {
 	chat := bot.Chats[message.Chat.ID]
 	txt := AnswerWithFixedPhrase(chat.Filename, message.Text)
 	threadId := 0
 	if txt == "" {
-		return
+		return false
 	}
 	if message.Chat.IsForum && message.MessageThreadID != 0 {
 		threadId = message.MessageThreadID
 	}
-	bot.SendMessage(tgbotapi.MessageConfig{
-		BaseChat: tgbotapi.BaseChat{
-			ChatID:           message.Chat.ID,
-			MessageThreadID:  threadId,
-			ReplyToMessageID: 0,
-		},
-		Text:                  txt,
-		DisableWebPagePreview: false,
-	})
+	if strings.Contains(txt, "sticker:") {
+		txt = strings.Replace(txt, "sticker:", "", 1)
+		bot.SendMessage(tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(txt)))
+	} else {
+		bot.SendMessage(tgbotapi.MessageConfig{
+			BaseChat: tgbotapi.BaseChat{
+				ChatID:           message.Chat.ID,
+				MessageThreadID:  threadId,
+				ReplyToMessageID: 0,
+			},
+			Text:                  txt,
+			DisableWebPagePreview: false,
+		})
+	}
+	return true
 }
 
 type Phrase struct {
