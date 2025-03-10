@@ -101,7 +101,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if utils.CheckForUrls(update.Message) {
 		return
 	}
-	if isTimeToTalk && chat.CanTalkPhrases && bot.SendFixedPhrase(update.Message) {
+	if isTimeToTalk && chat.CanTalkPhrases && bot.SendFixedPhrase(update.Message, "") {
 		chat.Counter = 0
 	} else if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
@@ -115,6 +115,8 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			if bot.SendAnswer(update) {
 				return
 			} else if bot.Shakspearing(update) {
+				return
+			} else if rand.Intn(10) == 1 && bot.SendFixedPhrase(update.Message, update.Message.Text) {
 				return
 			} else {
 				bot.SemenMessageSend(update, isReply)

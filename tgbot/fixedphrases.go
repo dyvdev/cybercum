@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message) bool {
+func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, searchPhrase string) bool {
 	chat := bot.Chats[message.Chat.ID]
-	txt := AnswerWithFixedPhrase(chat.Filename, message.Text)
+	txt := AnswerWithFixedPhrase(chat.Filename, searchPhrase)
 	threadId := 0
 	if txt == "" {
 		return false
@@ -55,6 +55,9 @@ func LoadPhrases(filename string) (phrases map[string][]*Phrase) {
 
 func AnswerWithFixedPhrase(filename string, text string) string {
 	phrases := LoadPhrases(filename)
+	if text == "" {
+		return GetWeightedAnswer(phrases[""])
+	}
 	for key, _ := range phrases {
 		if key != "" {
 			keys := strings.Split(key, "|")
@@ -65,7 +68,7 @@ func AnswerWithFixedPhrase(filename string, text string) string {
 			}
 		}
 	}
-	return GetWeightedAnswer(phrases[""])
+	return ""
 }
 
 func GetWeightedAnswer(phrases []*Phrase) (str string) {
