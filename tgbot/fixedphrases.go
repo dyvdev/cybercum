@@ -57,8 +57,11 @@ func AnswerWithFixedPhrase(filename string, text string) string {
 	phrases := LoadPhrases(filename)
 	for key, _ := range phrases {
 		if key != "" {
-			if strings.Contains(text, key) {
-				return GetWeightedAnswer(phrases[key])
+			keys := strings.Split(key, "|")
+			for _, k := range keys {
+				if strings.Contains(text, k) {
+					return GetWeightedAnswer(phrases[k])
+				}
 			}
 		}
 	}
