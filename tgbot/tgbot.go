@@ -59,10 +59,14 @@ func (bot *Bot) Update(done <-chan bool) {
 					bot.BotApi.Leave(update.FromChat())
 					continue
 				}
+				// админ
+				bot.NewUserMessageRemover(update)
+
 				//========= раскоментировать для дебага:
 				//bot.CheckChatSettings(update)
 				//continue
 				//=========
+
 				bot.CheckChatSettings(update)
 				if update.MessageReaction != nil {
 					bot.ProcessReaction(update)
@@ -115,8 +119,6 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			if bot.SendAnswer(update) {
 				return
 			} else if bot.Shakspearing(update) {
-				return
-			} else if rand.Intn(10) == 1 && bot.SendFixedPhrase(update.Message, update.Message.Text) {
 				return
 			} else {
 				bot.SemenMessageSend(update, isReply)
