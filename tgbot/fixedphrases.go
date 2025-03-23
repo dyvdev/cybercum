@@ -9,9 +9,9 @@ import (
 	"strings"
 )
 
-func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, searchPhrase string) bool {
+func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, text string) bool {
 	chat := bot.Chats[message.Chat.ID]
-	txt := AnswerWithFixedPhrase(chat.Filename, searchPhrase)
+	txt := AnswerWithFixedPhrase(chat.Filename, text)
 	threadId := 0
 	if txt == "" {
 		return false

@@ -105,12 +105,14 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if utils.CheckForUrls(update.Message) {
 		return
 	}
-	if isTimeToTalk && chat.CanTalkPhrases && bot.SendFixedPhrase(update.Message, "") {
-		chat.Counter = 0
-	} else if chat.CanTalkSemen {
+	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
 		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
-		if isTimeToTalk || isReply || isMessageToMe {
+		if isTimeToTalk {
+			if !bot.SendFixedPhrase(update.Message, update.Message.Text) {
+				bot.SendFixedPhrase(update.Message, "")
+			}
+		} else if isReply || isMessageToMe {
 			// всегда отвечаем на вопрос к нам
 			if (isMessageToMe || isReply) && bot.SendAnswer(update) {
 				return
@@ -125,6 +127,8 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			}
 		}
 		bot.Learning(update.Message)
+	} else if isTimeToTalk && chat.CanTalkPhrases && bot.SendFixedPhrase(update.Message, "") {
+		chat.Counter = 0
 	}
 }
 
