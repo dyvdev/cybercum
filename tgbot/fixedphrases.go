@@ -12,26 +12,18 @@ import (
 func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, text string) bool {
 	chat := bot.Chats[message.Chat.ID]
 	txt := AnswerWithFixedPhrase(chat.Filename, text)
-	threadId := 0
 	if txt == "" {
 		return false
-	}
-	if message.Chat.IsForum && message.MessageThreadID != 0 {
-		threadId = message.MessageThreadID
 	}
 	if strings.Contains(txt, "sticker:") {
 		txt = strings.Replace(txt, "sticker:", "", 1)
 		bot.SendMessage(tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(txt)))
 	} else {
-		bot.SendMessage(tgbotapi.MessageConfig{
-			BaseChat: tgbotapi.BaseChat{
-				ChatID:           message.Chat.ID,
-				MessageThreadID:  threadId,
-				ReplyToMessageID: 0,
-			},
-			Text:                  txt,
-			DisableWebPagePreview: false,
-		})
+		if text == "" {
+			bot.SendText(txt, message)
+		} else {
+			bot.Reply(txt, message)
+		}
 	}
 	return true
 }

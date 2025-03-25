@@ -200,6 +200,23 @@ func (bot *Bot) Learning(message *tgbotapi.Message) {
 	bot.Swatter.ParseText(message.Text)
 }
 
+// Reply отправка ответа на сообщение
+func (bot *Bot) SendText(text string, message *tgbotapi.Message) {
+	threadId := 0
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		threadId = message.MessageThreadID
+	}
+	bot.SendMessage(tgbotapi.MessageConfig{
+		BaseChat: tgbotapi.BaseChat{
+			ChatID:           message.Chat.ID,
+			MessageThreadID:  threadId,
+			ReplyToMessageID: 0,
+		},
+		Text:                  text,
+		DisableWebPagePreview: false,
+	})
+}
+
 // SendMessage отправка сообщения
 func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
 	switch concrete := message.(type) {
