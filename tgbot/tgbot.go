@@ -218,6 +218,9 @@ func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
 func (bot *Bot) Reply(text string, message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		msg.MessageThreadID = message.MessageThreadID
+	}
 	bot.SendMessage(msg)
 }
 
