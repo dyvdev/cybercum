@@ -28,9 +28,7 @@ func (bot *Bot) SendAnswer(update tgbotapi.Update) bool {
 		} else if rand.Intn(2) == 0 {
 			str = "нет"
 		}
-		msg := tgbotapi.NewMessage(update.FromChat().ID, str)
-		msg.ReplyToMessageID = update.Message.MessageID
-		bot.SendMessage(msg)
+		bot.Reply(str, update.Message)
 		return true
 	}
 	return false
