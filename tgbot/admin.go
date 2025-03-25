@@ -6,7 +6,7 @@ import (
 )
 
 func (bot *Bot) NewUserMessageRemover(update tgbotapi.Update) {
-	if update.Message.NewChatMembers != nil {
+	if update.Message != nil && update.Message.NewChatMembers != nil {
 		if !bot.CheckAdminRights(update.FromChat().ID) {
 			return
 		}

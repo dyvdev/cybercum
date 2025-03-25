@@ -150,9 +150,9 @@ func (bot *Bot) Shakspearing(update tgbotapi.Update) bool {
 
 // ProcessReaction обработка реакций на сообщения бота
 func (bot *Bot) ProcessReaction(update tgbotapi.Update) {
-	if update.MessageReaction.NewReaction != nil && update.MessageReaction.NewReaction[0].Emoji == "❤" {
-		log.Println("reaction message: ", update.Message)
-	}
+	//if update.MessageReaction.NewReaction != nil && update.MessageReaction.NewReaction[0].Emoji == "❤" {
+	//	log.Println("reaction message: ", update.Message)
+	//}
 }
 
 // SemenMessageSend отправка генерируемых сообщений
@@ -234,6 +234,15 @@ func (bot *Bot) SendMessage(message tgbotapi.Chattable) {
 // Reply отправка ответа на сообщение
 func (bot *Bot) Reply(text string, message *tgbotapi.Message) {
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
+	msg.ReplyToMessageID = message.MessageID
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		msg.MessageThreadID = message.MessageThreadID
+	}
+	bot.SendMessage(msg)
+}
+
+func (bot *Bot) ReplyWithSticker(fileId string, message *tgbotapi.Message) {
+	msg := tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(fileId))
 	msg.ReplyToMessageID = message.MessageID
 	if message.Chat.IsForum && message.MessageThreadID != 0 {
 		msg.MessageThreadID = message.MessageThreadID

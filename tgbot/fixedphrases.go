@@ -17,7 +17,7 @@ func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, text string) bool {
 	}
 	if strings.Contains(txt, "sticker:") {
 		txt = strings.Replace(txt, "sticker:", "", 1)
-		bot.SendMessage(tgbotapi.NewSticker(message.Chat.ID, tgbotapi.FileID(txt)))
+		bot.ReplyWithSticker(txt, message)
 	} else {
 		if text == "" {
 			bot.SendText(txt, message)
@@ -55,7 +55,7 @@ func AnswerWithFixedPhrase(filename string, text string) string {
 			keys := strings.Split(key, "|")
 			for _, k := range keys {
 				if strings.Contains(text, k) {
-					return GetWeightedAnswer(phrases[k])
+					return GetWeightedAnswer(phrases[key])
 				}
 			}
 		}
