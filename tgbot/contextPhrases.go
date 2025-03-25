@@ -30,7 +30,7 @@ func (bot *Bot) SendAnswer(update tgbotapi.Update) bool {
 		}
 		msg := tgbotapi.NewMessage(update.FromChat().ID, str)
 		msg.ReplyToMessageID = update.Message.MessageID
-		bot.BotApi.Send(msg)
+		bot.SendMessage(msg)
 		return true
 	}
 	return false

@@ -44,7 +44,7 @@ type Phrase struct {
 func LoadPhrases(filename string) (phrases map[string][]*Phrase) {
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatal("Error when opening file: ", err)
+		log.Fatal("Error when opening phrases file: ", filename, err)
 	}
 	err = json.Unmarshal(content, &phrases)
 	if err != nil {

@@ -108,16 +108,17 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
 		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
-		if isTimeToTalk {
-			if !bot.SendFixedPhrase(update.Message, update.Message.Text) {
-				bot.SendFixedPhrase(update.Message, "")
-			}
+
+		if bot.SendFixedPhrase(update.Message, update.Message.Text) {
+
+		} else if isTimeToTalk {
+			bot.SendFixedPhrase(update.Message, "")
+			chat.Counter = 0
 		} else if isReply || isMessageToMe {
 			// всегда отвечаем на вопрос к нам
 			if (isMessageToMe || isReply) && bot.SendAnswer(update) {
 				return
 			}
-			chat.Counter = 0
 			if bot.SendAnswer(update) {
 				return
 			} else if bot.Shakspearing(update) {
@@ -141,9 +142,7 @@ func (bot *Bot) Shakspearing(update tgbotapi.Update) bool {
 		if txt == "" {
 			return false
 		}
-		msg := tgbotapi.NewMessage(update.FromChat().ID, txt+"😁")
-		msg.ReplyToMessageID = update.Message.MessageID
-		bot.BotApi.Send(msg)
+		bot.Reply(txt+"😁", update.Message)
 		return true
 	}
 	return false
@@ -236,7 +235,7 @@ func (bot *Bot) LoadConfig() {
 	log.Println("reading config...")
 	content, err := os.ReadFile("config.json")
 	if err != nil {
-		log.Fatal("Error when opening file: ", err)
+		log.Fatal("Error when opening config file: ", err)
 	}
 	err = json.Unmarshal(content, &bot.Cfg)
 	if err != nil {
