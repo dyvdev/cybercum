@@ -248,6 +248,24 @@ func (bot *Bot) ReplyWithSticker(fileId string, message *tgbotapi.Message) {
 	bot.SendMessage(msg)
 }
 
+func (bot *Bot) ReplyWithVoice(fileId string, message *tgbotapi.Message) {
+	msg := tgbotapi.NewVoice(message.Chat.ID, tgbotapi.FileID(fileId))
+	msg.ReplyToMessageID = message.MessageID
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		msg.MessageThreadID = message.MessageThreadID
+	}
+	bot.SendMessage(msg)
+}
+
+func (bot *Bot) ReplyWithVideo(fileId string, message *tgbotapi.Message) {
+	msg := tgbotapi.NewVideo(message.Chat.ID, tgbotapi.FileID(fileId))
+	msg.ReplyToMessageID = message.MessageID
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		msg.MessageThreadID = message.MessageThreadID
+	}
+	bot.SendMessage(msg)
+}
+
 // Tick таймер
 func (bot *Bot) Tick() bool {
 	isReady := time.Now().UTC().After(bot.Timer)
@@ -330,7 +348,13 @@ func logMessage(message *tgbotapi.Message) {
 		log.Println("sticker id: ", message.Sticker.FileID)
 	}
 	if message.Audio != nil {
-		log.Println("sticker id: ", message.Audio.FileID)
+		log.Println("audio id: ", message.Audio.FileID)
+	}
+	if message.Voice != nil {
+		log.Println("voice id: ", message.Voice.FileID)
+	}
+	if message.Video != nil {
+		log.Println("video id: ", message.Video.FileID)
 	}
 	log.Println("message log end")
 }

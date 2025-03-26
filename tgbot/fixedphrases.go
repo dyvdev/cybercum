@@ -18,6 +18,12 @@ func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, text string) bool {
 	if strings.Contains(txt, "sticker:") {
 		txt = strings.Replace(txt, "sticker:", "", 1)
 		bot.ReplyWithSticker(txt, message)
+	} else if strings.Contains(txt, "voice:") {
+		txt = strings.Replace(txt, "voice:", "", 1)
+		bot.ReplyWithVoice(txt, message)
+	} else if strings.Contains(txt, "video:") {
+		txt = strings.Replace(txt, "video:", "", 1)
+		bot.ReplyWithVideo(txt, message)
 	} else {
 		if text == "" {
 			bot.SendText(txt, message)
