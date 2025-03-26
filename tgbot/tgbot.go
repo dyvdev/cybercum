@@ -108,12 +108,10 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
 		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
-
-		if bot.SendFixedPhrase(update.Message, update.Message.Text) {
-
-		} else if isTimeToTalk {
-			bot.SendFixedPhrase(update.Message, "")
-			chat.Counter = 0
+		if isTimeToTalk {
+			if bot.SendFixedPhrase(update.Message, update.Message.Text) {
+				chat.Counter = 0
+			}
 		} else if isReply || isMessageToMe {
 			// всегда отвечаем на вопрос к нам
 			if (isMessageToMe || isReply) && bot.SendAnswer(update) {
