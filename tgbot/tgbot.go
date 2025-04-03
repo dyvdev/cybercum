@@ -248,6 +248,15 @@ func (bot *Bot) ReplyWithSticker(fileId string, message *tgbotapi.Message) {
 	bot.SendMessage(msg)
 }
 
+func (bot *Bot) ReplyWithAnimation(fileId string, message *tgbotapi.Message) {
+	msg := tgbotapi.NewAnimation(message.Chat.ID, tgbotapi.FileID(fileId))
+	msg.ReplyToMessageID = message.MessageID
+	if message.Chat.IsForum && message.MessageThreadID != 0 {
+		msg.MessageThreadID = message.MessageThreadID
+	}
+	bot.SendMessage(msg)
+}
+
 func (bot *Bot) ReplyWithVoice(fileId string, message *tgbotapi.Message) {
 	msg := tgbotapi.NewVoice(message.Chat.ID, tgbotapi.FileID(fileId))
 	msg.ReplyToMessageID = message.MessageID
@@ -355,6 +364,9 @@ func logMessage(message *tgbotapi.Message) {
 	}
 	if message.Video != nil {
 		log.Println("video id: ", message.Video.FileID)
+	}
+	if message.Animation != nil {
+		log.Println("animation id: ", message.Animation.FileID)
 	}
 	log.Println("message log end")
 }

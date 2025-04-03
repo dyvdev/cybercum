@@ -24,6 +24,9 @@ func (bot *Bot) SendFixedPhrase(message *tgbotapi.Message, text string) bool {
 	} else if strings.Contains(txt, "video:") {
 		txt = strings.Replace(txt, "video:", "", 1)
 		bot.ReplyWithVideo(txt, message)
+	} else if strings.Contains(txt, "gif:") {
+		txt = strings.Replace(txt, "gif:", "", 1)
+		bot.ReplyWithAnimation(txt, message)
 	} else {
 		if text == "" {
 			bot.SendText(txt, message)
