@@ -112,7 +112,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		return
 	}
 	if rand.Intn(100) == 1 && chat.CanTalkNeuro {
-		txt := neurocum.Respond(chat.Context, chat.Filename)
+		txt := neurocum.Respond(chat.Context, chat.NeuroPrompt)
 		if txt != "" {
 			bot.Reply(txt, update.Message)
 			return
@@ -351,6 +351,8 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 			Filename:         bot.Cfg.DefaultPhrasesFilename,
 			Cums:             []string{bot.Cfg.MainCum},
 			lastMessageId:    atomic.Uint64{},
+			NeuroPrompt:      "",
+			Context:          []string{},
 		}
 		bot.SaveDump()
 	}

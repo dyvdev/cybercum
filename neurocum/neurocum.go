@@ -1,15 +1,13 @@
 package neurocum
 
 import (
-	"log"
 	"log/slog"
-	"os"
 	"strings"
 
 	gigachat "github.com/saintbyte/gigachat_api"
 )
 
-func Respond(context []string, promptfilename string) string {
+func Respond(context []string, prompt string) string {
 	chat := &gigachat.Gigachat{
 		ApiHost:           gigachat.GigaChatApiHost,
 		RepetitionPenalty: 1,
@@ -19,7 +17,6 @@ func Respond(context []string, promptfilename string) string {
 		Temperature:       1,
 		AuthData:          "",
 	}
-	prompt := ReadPrompt(promptfilename)
 	answer, err := ask(chat, gigachat.GigaChatRoleSystem, prompt)
 	if err != nil {
 		slog.Error("Ask error:", err)
@@ -57,13 +54,4 @@ func CheckConnect() bool {
 		slog.Error("CheckConnect error:", err)
 	}
 	return err == nil
-}
-
-func ReadPrompt(filename string) string {
-	content, err := os.ReadFile(filename + "_prompt")
-	if err != nil {
-		log.Fatal("Error when opening prompt file: ", filename, err)
-	}
-
-	return string(content)
 }

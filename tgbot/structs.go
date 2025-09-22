@@ -38,6 +38,7 @@ type Chat struct {
 	Cums             []string
 	lastMessageId    atomic.Uint64
 	Context          []string
+	NeuroPrompt      string
 }
 
 type Bot struct {
