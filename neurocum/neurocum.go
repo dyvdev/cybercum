@@ -53,6 +53,9 @@ func CheckConnect() bool {
 		AuthData:          "",
 	}
 	_, err := chat.GetModels()
+	if err != nil {
+		slog.Error("CheckConnect error:", err)
+	}
 	return err == nil
 }
 

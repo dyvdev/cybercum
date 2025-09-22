@@ -111,7 +111,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if utils.CheckForUrls(update.Message) {
 		return
 	}
-	if chat.CanTalkNeuro {
+	if rand.Intn(100) == 1 && chat.CanTalkNeuro {
 		txt := neurocum.Respond(chat.Context, chat.Filename)
 		if txt != "" {
 			bot.Reply(txt, update.Message)
