@@ -1,10 +1,11 @@
 package tgbot
 
 import (
-	"github.com/dyvdev/cybercum/swatter"
-	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"sync/atomic"
 	"time"
+
+	"github.com/dyvdev/cybercum/swatter"
+	tgbotapi "github.com/dyvdev/telegram-bot-api"
 )
 
 const (
@@ -20,12 +21,14 @@ type Config struct {
 
 	EnableSemen     bool // включить генерацию фраз
 	EnableReactions bool // включить реакции
+	EnableNeuro     bool // включить нейронку
 	Ratio           int  // количество сообщений между ответами бота
 	Length          int  // длина сообщений генератоа цепей
 }
 type Chat struct {
 	ChatName         string
 	CanTalkSemen     bool
+	CanTalkNeuro     bool
 	CanTalkPhrases   bool
 	CanSendReactions bool
 	Ratio            int //количество сообщений между ответами бота
@@ -34,6 +37,7 @@ type Chat struct {
 	Filename         string
 	Cums             []string
 	lastMessageId    atomic.Uint64
+	Context          []string
 }
 
 type Bot struct {

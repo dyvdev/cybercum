@@ -2,14 +2,16 @@ package tgbot
 
 import (
 	"encoding/json"
-	"github.com/dyvdev/cybercum/swatter"
-	"github.com/dyvdev/cybercum/utils"
-	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
 	"math/rand"
 	"os"
 	"sync/atomic"
 	"time"
+
+	"github.com/dyvdev/cybercum/neurocum"
+	"github.com/dyvdev/cybercum/swatter"
+	"github.com/dyvdev/cybercum/utils"
+	tgbotapi "github.com/dyvdev/telegram-bot-api"
 )
 
 // NewBot конструктор нового бота, загрузка данных чатов
@@ -98,12 +100,23 @@ func (bot *Bot) Update(done <-chan bool) {
 func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	chat := bot.Chats[update.FromChat().ID]
 	chat.Counter++
+	chat.Context = append(chat.Context, update.Message.Text)
+	if len(chat.Context) == 15 {
+		chat.Context = chat.Context[1:]
+	}
 	isTimeToTalk := chat.Ratio == 0 || (chat.Counter > chat.Ratio && bot.Tick())
 	if chat.CanSendReactions && bot.SendRandomReaction(update) {
 		return
 	}
 	if utils.CheckForUrls(update.Message) {
 		return
+	}
+	if chat.CanTalkNeuro {
+		txt := neurocum.Respond(chat.Context, chat.Filename)
+		if txt != "" {
+			bot.Reply(txt, update.Message)
+			return
+		}
 	}
 	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
@@ -329,6 +342,7 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 		bot.Chats[update.FromChat().ID] = &Chat{
 			ChatName:         chatName,
 			CanTalkSemen:     bot.Cfg.EnableSemen,
+			CanTalkNeuro:     bot.Cfg.EnableNeuro,
 			CanTalkPhrases:   bot.Cfg.EnablePhrases,
 			CanSendReactions: bot.Cfg.EnableReactions,
 			Ratio:            bot.Cfg.Ratio,

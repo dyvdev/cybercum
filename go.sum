@@ -1,7 +1,11 @@
 github.com/dyvdev/telegram-bot-api v0.0.0-20240221155320-954290bad843 h1:+L9xkNc2mtGFo1lwDPBOgu18TK5XBuKcwZJdqaAUKYs=
 github.com/dyvdev/telegram-bot-api v0.0.0-20240221155320-954290bad843/go.mod h1:smwkrxxSJWPYzH/BBI4aF3R1s56jLb7wHhOK4rKG/I8=
+github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d h1:VhgPp6v9qf9Agr/56bj7Y/xa04UccTW04VP0Qed4vnQ=
+github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 h1:OdAsTTz6OkFY5QxjkYwrChwuRruF69c169dPK26NUlk=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
+github.com/saintbyte/gigachat_api v0.0.3 h1:ZFqPprMTS3pJb00S0974h4yqICWa/kIuJ5tfyYiSPMM=
+github.com/saintbyte/gigachat_api v0.0.3/go.mod h1:X5/Jg83ox6uCsUwo7lb/c5aF9Js1rQXwJvJJPqT5XUs=
 modernc.org/mathutil v1.5.0 h1:rV0Ko/6SfM+8G+yKiyI830l3Wuz1zRutdslNoQ0kfiQ=
 modernc.org/mathutil v1.5.0/go.mod h1:mZW8CKdRPY1v87qxC/wUdX5O1qDzXMP5TH3wjfpga6E=
 mvdan.cc/xurls/v2 v2.5.0 h1:lyBNOm8Wo71UknhUs4QTFUNNMyxy2JEIaKKo0RWOh+8=

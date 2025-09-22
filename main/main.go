@@ -1,13 +1,14 @@
 package main
 
 import (
-	cum "github.com/dyvdev/cybercum"
-	"github.com/dyvdev/cybercum/swatter"
-	"github.com/dyvdev/cybercum/utils"
 	"log"
 	"math/rand"
 	"os"
 	"time"
+
+	cum "github.com/dyvdev/cybercum"
+	"github.com/dyvdev/cybercum/swatter"
+	"github.com/dyvdev/cybercum/utils"
 )
 
 func main() {
