@@ -8,6 +8,9 @@ import (
 )
 
 func Respond(context []string, prompt string) string {
+	if len(context) == 0 || prompt == "" {
+		return ""
+	}
 	chat := &gigachat.Gigachat{
 		ApiHost:           gigachat.GigaChatApiHost,
 		RepetitionPenalty: 1,
