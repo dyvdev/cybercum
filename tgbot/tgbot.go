@@ -100,10 +100,6 @@ func (bot *Bot) Update(done <-chan bool) {
 func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	chat := bot.Chats[update.FromChat().ID]
 	chat.Counter++
-	chat.Context = append(chat.Context, update.Message.Text)
-	if len(chat.Context) == 15 {
-		chat.Context = chat.Context[1:]
-	}
 	isTimeToTalk := chat.Ratio == 0 || (chat.Counter > chat.Ratio && bot.Tick())
 	if chat.CanSendReactions && bot.SendRandomReaction(update) {
 		return
@@ -111,11 +107,23 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 	if utils.CheckForUrls(update.Message) {
 		return
 	}
-	if rand.Intn(100) == 1 && chat.CanTalkNeuro {
-		txt := neurocum.Respond(chat.Context, chat.NeuroPrompt)
-		if txt != "" {
-			bot.Reply(txt, update.Message)
-			return
+	if chat.CanTalkNeuro {
+		log.Println("neuro start")
+		if len(update.Message.Text) < 100 {
+			chat.Context = append(chat.Context, update.Message.From.UserName+": "+update.Message.Text)
+			if len(chat.Context) == 15 {
+				chat.Context = chat.Context[1:]
+			}
+		}
+		if rand.Intn(5) == 1 {
+			log.Println("neuro go")
+			txt := neurocum.Respond(chat.Context, chat.NeuroPrompt)
+			if txt != "" {
+				log.Println("neuro: ", txt)
+				bot.Reply(txt, update.Message)
+				return
+			}
+			log.Println("failed neuro", chat.Context)
 		}
 	}
 	if chat.CanTalkSemen {

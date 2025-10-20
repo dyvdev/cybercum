@@ -1,7 +1,7 @@
 package neurocum
 
 import (
-	"log/slog"
+	"log"
 	"strings"
 
 	gigachat "github.com/saintbyte/gigachat_api"
@@ -22,13 +22,13 @@ func Respond(context []string, prompt string) string {
 	}
 	answer, err := ask(chat, gigachat.GigaChatRoleSystem, prompt)
 	if err != nil {
-		slog.Error("Ask error:", err)
+		log.Println("Ask error:", err)
 		return ""
 	}
 	in := strings.Join(context, "\n")
 	answer, err = ask(chat, gigachat.GigaChatRoleUser, in)
 	if err != nil {
-		slog.Error("Ask error:", err)
+		log.Println("Ask error:", err)
 		return ""
 	}
 	return answer
@@ -54,7 +54,7 @@ func CheckConnect() bool {
 	}
 	_, err := chat.GetModels()
 	if err != nil {
-		slog.Error("CheckConnect error:", err)
+		log.Println("CheckConnect error:", err)
 	}
 	return err == nil
 }
