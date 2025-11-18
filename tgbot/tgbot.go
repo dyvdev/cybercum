@@ -125,10 +125,17 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			log.Println("failed neuro", chat.Context)
 		}
 	}
-	if isTimeToTalk && bot.Chats[update.FromChat().ID].CanPlayGame {
-		bot.GameUpdate(update)
-		chat.Counter = 0
-		return
+	if bot.Chats[update.FromChat().ID].CanPlayGame {
+		if isTimeToTalk {
+			chat.Counter = 0
+			bot.GameUpdate(update)
+			return
+		}
+
+		if update.CallbackQuery != nil {
+			bot.GameUpdate(update)
+			return
+		}
 	}
 	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
@@ -173,9 +180,15 @@ func (bot *Bot) Shakespearing(update tgbotapi.Update) bool {
 
 // ProcessReaction обработка реакций на сообщения бота
 func (bot *Bot) ProcessReaction(update tgbotapi.Update) {
-	//if update.MessageReaction.NewReaction != nil && update.MessageReaction.NewReaction[0].Emoji == "❤" {
-	//	log.Println("reaction message: ", update.Message)
-	//}
+	if update.MessageReaction.NewReaction != nil {
+		log.Println("reaction emoji: ", update.MessageReaction.NewReaction)
+		if bot.IsCum(update.MessageReaction.Chat.ID, update.MessageReaction.User.ID) && update.MessageReaction.NewReaction[0].Emoji == "💩" {
+			_, err := bot.BotApi.Send(tgbotapi.NewDeleteMessage(update.FromChat().ID, int(update.MessageReaction.MessageID)))
+			if err != nil {
+				log.Println("error removing message")
+			}
+		}
+	}
 }
 
 // SemenMessageSend отправка генерируемых сообщений

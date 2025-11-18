@@ -1,12 +1,13 @@
 package tgbot
 
 import (
-	tgbotapi "github.com/dyvdev/telegram-bot-api"
 	"log"
 	"math/rand"
-	"modernc.org/mathutil"
 	"strconv"
 	"strings"
+
+	tgbotapi "github.com/dyvdev/telegram-bot-api"
+	"modernc.org/mathutil"
 )
 
 const (
@@ -42,7 +43,7 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 			bot.Reply(strconv.Itoa(rand.Intn(100000000)), update.Message)
 		}
 	}
-	if bot.IsCum(update.Message) {
+	if bot.IsCum(update.Message.Chat.ID, update.Message.From.ID) {
 		switch update.Message.Command() {
 		case commandAddCum:
 			i := bot.AddCum(chat, update.Message.CommandArguments())
@@ -79,15 +80,15 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 	}
 }
 
-func (bot *Bot) IsCum(message *tgbotapi.Message) bool {
+func (bot *Bot) IsCum(chatId int64, userId int64) bool {
 	mmb, err := bot.BotApi.GetChatMember(tgbotapi.GetChatMemberConfig{
 		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
-			ChatID:             message.Chat.ID,
+			ChatID:             chatId,
 			SuperGroupUsername: "",
-			UserID:             message.From.ID},
+			UserID:             userId},
 	})
 	if err == nil {
-		chat := bot.Chats[message.Chat.ID]
+		chat := bot.Chats[chatId]
 		for _, v := range chat.Cums {
 			if v == mmb.User.UserName {
 				return true
