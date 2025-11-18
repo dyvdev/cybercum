@@ -1,7 +1,6 @@
 package tgbot
 
 import (
-	"sync/atomic"
 	"time"
 
 	"github.com/dyvdev/cybercum/swatter"
@@ -22,6 +21,7 @@ type Config struct {
 	EnableSemen     bool // включить генерацию фраз
 	EnableReactions bool // включить реакции
 	EnableNeuro     bool // включить нейронку
+	EnableGame      bool // включить игру
 	Ratio           int  // количество сообщений между ответами бота
 	Length          int  // длина сообщений генератоа цепей
 }
@@ -36,9 +36,11 @@ type Chat struct {
 	SemenLength      int
 	Filename         string
 	Cums             []string
-	lastMessageId    atomic.Uint64
 	Context          []string
 	NeuroPrompt      string
+
+	Gamers      map[int64]*Gamer
+	CanPlayGame bool
 }
 
 type Bot struct {
@@ -50,4 +52,6 @@ type Bot struct {
 	Chats map[int64]*Chat
 
 	Swatter *swatter.DataStorage
+
+	gamingChan chan tgbotapi.Update
 }

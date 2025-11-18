@@ -5,7 +5,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"sync/atomic"
 	"time"
 
 	"github.com/dyvdev/cybercum/neurocum"
@@ -126,6 +125,11 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			log.Println("failed neuro", chat.Context)
 		}
 	}
+	if isTimeToTalk && bot.Chats[update.FromChat().ID].CanPlayGame {
+		bot.GameUpdate(update)
+		chat.Counter = 0
+		return
+	}
 	if chat.CanTalkSemen {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
 		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
@@ -140,7 +144,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 			}
 			if bot.SendAnswer(update) {
 				return
-			} else if bot.Shakspearing(update) {
+			} else if bot.Shakespearing(update) {
 				return
 			} else {
 				bot.SemenMessageSend(update, isReply)
@@ -153,7 +157,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 }
 
 // Shakspearing попытка скаламбурить, true если получилось
-func (bot *Bot) Shakspearing(update tgbotapi.Update) bool {
+func (bot *Bot) Shakespearing(update tgbotapi.Update) bool {
 	if rand.Intn(10) == 1 {
 		txt := utils.CleanText(update.Message.Text)
 		// попытаемся скаламбурить
@@ -358,9 +362,11 @@ func (bot *Bot) CheckChatSettings(update tgbotapi.Update) {
 			SemenLength:      bot.Cfg.Length,
 			Filename:         bot.Cfg.DefaultPhrasesFilename,
 			Cums:             []string{bot.Cfg.MainCum},
-			lastMessageId:    atomic.Uint64{},
 			NeuroPrompt:      "",
 			Context:          []string{},
+
+			Gamers:      map[int64]*Gamer{},
+			CanPlayGame: bot.Cfg.EnableGame,
 		}
 		bot.SaveDump()
 	}
