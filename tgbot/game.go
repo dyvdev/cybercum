@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"time"
 
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
 )
@@ -26,39 +27,71 @@ type Game struct {
 	Stake         int
 }
 
-func (bot *Bot) GameUpdate(update tgbotapi.Update) {
-	if bot.gamingChan == nil {
-		bot.gamingChan = make(chan tgbotapi.Update)
-		currentGames := map[int64]*Game{}
-		go func() {
-			for {
-				select {
-				case u := <-bot.gamingChan:
-					game, ok := currentGames[u.FromChat().ID]
-					if ok {
-						if bot.gameAccept(u, game) {
-							delete(currentGames, u.FromChat().ID)
+func (bot *Bot) StartGaming() {
+	bot.CurrentGames = map[int64]*Game{}
+	bot.GamingChan = make(chan tgbotapi.Update)
+	go func() {
+		for {
+			select {
+			case u := <-bot.GamingChan:
+				game, ok := bot.CurrentGames[u.FromChat().ID]
+				if ok {
+					if u.CallbackQuery != nil {
+						log.Println("msg id:", bot.CurrentGames[u.FromChat().ID].MessageId)
+						if bot.CurrentGames[u.FromChat().ID].FirstPlayerId == u.CallbackQuery.From.ID {
+							break
 						}
-					} else {
-						currentGames[u.FromChat().ID] = &Game{
+						if bot.gameAccept(u, game) {
+							// если игра закончилась, почистим
+							delete(bot.CurrentGames, u.FromChat().ID)
+						} else {
+							go func() {
+								time.Sleep(30 * time.Minute)
+								//time.Sleep(5 * time.Second)
+								game, ok := bot.CurrentGames[u.FromChat().ID]
+								if ok {
+									if bot.gameAccept(tgbotapi.Update{
+										CallbackQuery: &tgbotapi.CallbackQuery{
+											ID:   "1",
+											From: &bot.BotApi.Self,
+											Data: "1",
+											Message: &tgbotapi.Message{
+												MessageID: game.MessageId,
+												Chat:      u.FromChat(),
+											},
+										},
+									}, game) {
+										delete(bot.CurrentGames, u.FromChat().ID)
+									}
+								}
+							}()
+						}
+					}
+				} else {
+					if u.Message != nil {
+						bot.CurrentGames[u.FromChat().ID] = &Game{
 							MessageId:     u.Message.MessageID,
 							Started:       false,
 							FirstPlayerId: 0,
 						}
-						bot.newGameInvite(u)
+						bot.newGameInvite(u, bot.CurrentGames[u.FromChat().ID])
 					}
 				}
 			}
-		}()
-	} else {
-		bot.gamingChan <- update
-	}
+		}
+	}()
+}
+func (bot *Bot) GameUpdate(update tgbotapi.Update) {
+	bot.GamingChan <- update
 }
 
 func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 	chat := bot.Chats[update.FromChat().ID]
 	stake, _ := strconv.Atoi(update.CallbackQuery.Data)
 	gamerId := update.CallbackQuery.From.ID
+	if chat.Gamers == nil {
+		chat.Gamers = map[int64]*Gamer{}
+	}
 	_, ok := chat.Gamers[gamerId]
 	if !ok {
 		chat.Gamers[gamerId] = &Gamer{
@@ -83,25 +116,14 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 		msg := tgbotapi.NewEditMessageTextAndMarkup(update.FromChat().ID, update.CallbackQuery.Message.MessageID, fmt.Sprintf("%s\nбросает вызов чату, выбери своё оружие и сразись!",
 			GetPlayerString(update.CallbackQuery.From, chat.Gamers[gamerId])),
 			keyboard)
-		_, err := bot.BotApi.Send(msg)
+		c, err := bot.BotApi.Send(msg)
 		if err != nil {
 			log.Println("Error sending message: ", err)
 		}
+		currentGame.MessageId = c.MessageID
 		return false
 	}
 
-	if currentGame.FirstPlayerId == gamerId {
-		u, err := bot.BotApi.GetChatMember(tgbotapi.GetChatMemberConfig{
-			ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
-				ChatID:             update.FromChat().ID,
-				SuperGroupUsername: "",
-				UserID:             gamerId},
-		})
-		if err == nil {
-			log.Println("same user", GetName(u.User), GetStake(stake))
-		}
-		return false
-	}
 	winnerId := currentGame.FirstPlayerId
 	loserId := gamerId
 	winner, err := bot.BotApi.GetChatMember(tgbotapi.GetChatMemberConfig{
@@ -130,9 +152,9 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 	if stake == currentGame.Stake {
 		keyboard := tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{{
-				tgbotapi.NewInlineKeyboardButtonData("✂️", "4"),
-				tgbotapi.NewInlineKeyboardButtonData("🪨", "5"),
-				tgbotapi.NewInlineKeyboardButtonData("🧻", "6")}},
+				tgbotapi.NewInlineKeyboardButtonData("✂️", "1"),
+				tgbotapi.NewInlineKeyboardButtonData("🪨", "2"),
+				tgbotapi.NewInlineKeyboardButtonData("🧻", "3")}},
 		}
 		for i := range keyboard.InlineKeyboard[0] {
 			j := rand.Intn(i + 1)
@@ -143,10 +165,14 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 			GetStake(stake),
 			GetPlayerString(loser.User, chat.Gamers[loserId])),
 			keyboard)
-		_, err = bot.BotApi.Send(msg)
+		c, err := bot.BotApi.Send(msg)
 		if err != nil {
 			log.Println("Error sending message: ", err)
 		}
+		currentGame.MessageId = c.MessageID
+		currentGame.Stake = 0
+		currentGame.Started = false
+		currentGame.FirstPlayerId = 0
 		return false
 	} else if (stake == 3 && currentGame.Stake == 2) || (stake == 2 && currentGame.Stake == 1) || (stake == 1 && currentGame.Stake == 3) {
 		winnerId, loserId = gamerId, currentGame.FirstPlayerId
@@ -229,11 +255,12 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 	_, err = bot.BotApi.Send(msg)
 	if err != nil {
 		log.Println("Error sending message: ", err)
+		log.Println("msg: ", msg.MessageID)
 	}
 	return true
 }
 
-func (bot *Bot) newGameInvite(update tgbotapi.Update) {
+func (bot *Bot) newGameInvite(update tgbotapi.Update, currentGame *Game) {
 	msg := tgbotapi.NewMessage(update.FromChat().ID, "Жмякай кнопку, чтобы принять участие в Игре!")
 	keyboard := tgbotapi.InlineKeyboardMarkup{
 		InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{{
@@ -246,10 +273,11 @@ func (bot *Bot) newGameInvite(update tgbotapi.Update) {
 		keyboard.InlineKeyboard[0][i], keyboard.InlineKeyboard[0][j] = keyboard.InlineKeyboard[0][j], keyboard.InlineKeyboard[0][i]
 	}
 	msg.ReplyMarkup = keyboard
-	_, err := bot.BotApi.Send(msg)
+	c, err := bot.BotApi.Send(msg)
 	if err != nil {
 		log.Println("Error sending message: ", err)
 	}
+	currentGame.MessageId = c.MessageID
 }
 
 func GetName(user *tgbotapi.User) string {

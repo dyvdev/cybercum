@@ -53,5 +53,6 @@ type Bot struct {
 
 	Swatter *swatter.DataStorage
 
-	gamingChan chan tgbotapi.Update
+	GamingChan   chan tgbotapi.Update
+	CurrentGames map[int64]*Game
 }

@@ -21,6 +21,7 @@ const (
 		ratio - частота сообщений(50 значит, что бот будет писать раз в 50 сообщений)
 		length - длина сгенерированных сообщений
 		roll - написать число от 0 до N
+		game - запустить игру
 	*/
 	commandAddCum        = "add_cum"
 	commandEnableSemen   = "enable_semen"
@@ -30,6 +31,7 @@ const (
 	commandRatio         = "ratio"
 	commandLength        = "length"
 	commandRoll          = "roll"
+	commandGame          = "game"
 )
 
 func (bot *Bot) Commands(update tgbotapi.Update) {
@@ -42,6 +44,10 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 		} else {
 			bot.Reply(strconv.Itoa(rand.Intn(100000000)), update.Message)
 		}
+	case commandGame:
+		chat.CanPlayGame = true
+		chat.Counter = chat.Ratio + 1
+		bot.GameUpdate(update)
 	}
 	if bot.IsCum(update.Message.Chat.ID, update.Message.From.ID) {
 		switch update.Message.Command() {

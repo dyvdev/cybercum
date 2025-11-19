@@ -37,6 +37,7 @@ func NewBot() *Bot {
 	bot.DropCounter()
 	bot.Pause = 15 * time.Second
 	bot.Timer = time.Now().UTC().Add(bot.Pause)
+	bot.StartGaming()
 	return &bot
 }
 
@@ -44,7 +45,7 @@ func NewBot() *Bot {
 func (bot *Bot) Update(done <-chan bool) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	u.AllowedUpdates = []string{"message", "message_reaction", "message_reaction_count"}
+	u.AllowedUpdates = []string{"message", "message_reaction", "message_reaction_count", "callback_query"}
 	updates := bot.BotApi.GetUpdatesChan(u)
 	ticker := time.NewTicker(25 * time.Millisecond)
 	go func() {
@@ -90,6 +91,9 @@ func (bot *Bot) Update(done <-chan bool) {
 						bot.SendPhotoReaction(update)
 					}
 				}
+				if update.CallbackQuery != nil && bot.Chats[update.FromChat().ID].CanPlayGame {
+					bot.GameUpdate(update)
+				}
 			}
 		}
 	}()
@@ -104,6 +108,11 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		return
 	}
 	if utils.CheckForUrls(update.Message) {
+		return
+	}
+	if isTimeToTalk && bot.Chats[update.FromChat().ID].CanPlayGame {
+		chat.Counter = 0
+		bot.GameUpdate(update)
 		return
 	}
 	if chat.CanTalkNeuro {
@@ -123,18 +132,6 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 				return
 			}
 			log.Println("failed neuro", chat.Context)
-		}
-	}
-	if bot.Chats[update.FromChat().ID].CanPlayGame {
-		if isTimeToTalk {
-			chat.Counter = 0
-			bot.GameUpdate(update)
-			return
-		}
-
-		if update.CallbackQuery != nil {
-			bot.GameUpdate(update)
-			return
 		}
 	}
 	if chat.CanTalkSemen {
@@ -181,7 +178,6 @@ func (bot *Bot) Shakespearing(update tgbotapi.Update) bool {
 // ProcessReaction обработка реакций на сообщения бота
 func (bot *Bot) ProcessReaction(update tgbotapi.Update) {
 	if update.MessageReaction.NewReaction != nil {
-		log.Println("reaction emoji: ", update.MessageReaction.NewReaction)
 		if bot.IsCum(update.MessageReaction.Chat.ID, update.MessageReaction.User.ID) && update.MessageReaction.NewReaction[0].Emoji == "💩" {
 			_, err := bot.BotApi.Send(tgbotapi.NewDeleteMessage(update.FromChat().ID, int(update.MessageReaction.MessageID)))
 			if err != nil {
