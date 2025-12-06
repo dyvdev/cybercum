@@ -54,7 +54,7 @@ func (bot *Bot) StartGaming() {
 										CallbackQuery: &tgbotapi.CallbackQuery{
 											ID:   "1",
 											From: &bot.BotApi.Self,
-											Data: "1",
+											Data: strconv.Itoa(rand.Intn(4) + 1),
 											Message: &tgbotapi.Message{
 												MessageID: game.MessageId,
 												Chat:      u.FromChat(),
