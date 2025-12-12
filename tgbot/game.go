@@ -21,10 +21,11 @@ type CurrentGamer struct {
 	Stake int
 }
 type Game struct {
-	MessageId     int
-	Started       bool
-	FirstPlayerId int64
-	Stake         int
+	MessageId         int
+	Started           bool
+	FirstPlayerId     int64
+	Stake             int
+	GameStatusChanged chan int
 }
 
 func (bot *Bot) StartGaming() {
@@ -35,39 +36,7 @@ func (bot *Bot) StartGaming() {
 			select {
 			case u := <-bot.GamingChan:
 				game, ok := bot.CurrentGames[u.FromChat().ID]
-				if ok {
-					if u.CallbackQuery != nil {
-						log.Println("msg id:", bot.CurrentGames[u.FromChat().ID].MessageId)
-						if bot.CurrentGames[u.FromChat().ID].FirstPlayerId == u.CallbackQuery.From.ID {
-							break
-						}
-						if bot.gameAccept(u, game) {
-							// если игра закончилась, почистим
-							delete(bot.CurrentGames, u.FromChat().ID)
-						} else {
-							go func() {
-								time.Sleep(30 * time.Minute)
-								//time.Sleep(5 * time.Second)
-								game, ok := bot.CurrentGames[u.FromChat().ID]
-								if ok {
-									if bot.gameAccept(tgbotapi.Update{
-										CallbackQuery: &tgbotapi.CallbackQuery{
-											ID:   "1",
-											From: &bot.BotApi.Self,
-											Data: strconv.Itoa(rand.Intn(4) + 1),
-											Message: &tgbotapi.Message{
-												MessageID: game.MessageId,
-												Chat:      u.FromChat(),
-											},
-										},
-									}, game) {
-										delete(bot.CurrentGames, u.FromChat().ID)
-									}
-								}
-							}()
-						}
-					}
-				} else {
+				if !ok || !game.Started {
 					if u.Message != nil {
 						bot.CurrentGames[u.FromChat().ID] = &Game{
 							MessageId:     u.Message.MessageID,
@@ -75,6 +44,39 @@ func (bot *Bot) StartGaming() {
 							FirstPlayerId: 0,
 						}
 						bot.newGameInvite(u, bot.CurrentGames[u.FromChat().ID])
+						go func() {
+							select {
+							case <-game.GameStatusChanged:
+								return
+							case <-time.After(30 * time.Minute):
+								break
+							}
+							bot.GamingChan <- tgbotapi.Update{
+								CallbackQuery: &tgbotapi.CallbackQuery{
+									ID:   "delete",
+									From: &bot.BotApi.Self,
+									Message: &tgbotapi.Message{
+										MessageID: game.MessageId,
+										Chat:      u.FromChat(),
+									},
+								},
+							}
+						}()
+					}
+				} else {
+					if u.CallbackQuery != nil {
+						log.Println("msg id:", game.MessageId)
+						if u.CallbackQuery.ID == "delete" {
+							_, err := bot.BotApi.Send(tgbotapi.NewDeleteMessage(u.FromChat().ID, u.CallbackQuery.Message.MessageID))
+							if err != nil {
+								log.Println("error removing message")
+							}
+							break
+						}
+						if game.FirstPlayerId == u.CallbackQuery.From.ID {
+							break
+						}
+						bot.gameAccept(u, game)
 					}
 				}
 			}
@@ -103,6 +105,7 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 		currentGame.FirstPlayerId = gamerId
 		currentGame.Stake = stake
 		currentGame.Started = true
+		currentGame.GameStatusChanged <- 1
 		keyboard := tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{{
 				tgbotapi.NewInlineKeyboardButtonData("✂️", "1"),
@@ -257,6 +260,8 @@ func (bot *Bot) gameAccept(update tgbotapi.Update, currentGame *Game) bool {
 		log.Println("Error sending message: ", err)
 		log.Println("msg: ", msg.MessageID)
 	}
+	currentGame.Started = false
+	currentGame.GameStatusChanged <- 1
 	return true
 }
 
