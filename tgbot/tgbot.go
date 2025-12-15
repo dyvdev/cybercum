@@ -138,7 +138,9 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		isReply := update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.From.UserName == bot.BotApi.Self.UserName
 		isMessageToMe := bot.BotApi.IsMessageToMe(*update.Message)
 		if isTimeToTalk {
-			if bot.SendFixedPhrase(update.Message, update.Message.Text) {
+			if bot.Shakespearing(update) {
+				return
+			} else if bot.SendFixedPhrase(update.Message, update.Message.Text) {
 				chat.Counter = 0
 			}
 		} else if isReply || isMessageToMe {
