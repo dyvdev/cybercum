@@ -164,7 +164,7 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 
 // Shakspearing попытка скаламбурить, true если получилось
 func (bot *Bot) Shakespearing(update tgbotapi.Update) bool {
-	if rand.Intn(10) == 1 {
+	if rand.Intn(50) == 1 {
 		txt := utils.CleanText(update.Message.Text)
 		// попытаемся скаламбурить
 		txt = shakeSpear(txt)

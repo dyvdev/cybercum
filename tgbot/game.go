@@ -49,7 +49,6 @@ func (bot *Bot) StartGaming() {
 							case <-game.GameStatusChanged:
 								return
 							case <-time.After(30 * time.Minute):
-								break
 							}
 							bot.GamingChan <- tgbotapi.Update{
 								CallbackQuery: &tgbotapi.CallbackQuery{
@@ -71,12 +70,9 @@ func (bot *Bot) StartGaming() {
 							if err != nil {
 								log.Println("error removing message")
 							}
-							break
+						} else if game.FirstPlayerId != u.CallbackQuery.From.ID {
+							bot.gameAccept(u, game)
 						}
-						if game.FirstPlayerId == u.CallbackQuery.From.ID {
-							break
-						}
-						bot.gameAccept(u, game)
 					}
 				}
 			}
