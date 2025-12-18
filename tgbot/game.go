@@ -10,6 +10,8 @@ import (
 	tgbotapi "github.com/dyvdev/telegram-bot-api"
 )
 
+const messageToGameRatio = 100
+
 type Gamer struct {
 	Streak int
 	Wins   int
@@ -26,6 +28,7 @@ type Game struct {
 	FirstPlayerId     int64
 	Stake             int
 	GameStatusChanged chan int
+	messageCounter    int
 }
 
 func (bot *Bot) StartGaming() {
@@ -35,18 +38,42 @@ func (bot *Bot) StartGaming() {
 		for {
 			select {
 			case u := <-bot.GamingChan:
-				game, ok := bot.CurrentGames[u.FromChat().ID]
-				if !ok || !game.Started {
-					if u.Message != nil {
-						bot.CurrentGames[u.FromChat().ID] = &Game{
-							MessageId:     u.Message.MessageID,
-							Started:       false,
-							FirstPlayerId: 0,
+				_, ok := bot.CurrentGames[u.FromChat().ID]
+				if !ok {
+					bot.CurrentGames[u.FromChat().ID] = &Game{
+						MessageId:         u.Message.MessageID,
+						Started:           false,
+						FirstPlayerId:     0,
+						Stake:             0,
+						GameStatusChanged: make(chan int),
+					}
+				}
+				if bot.CurrentGames[u.FromChat().ID].Started {
+					// обрабатываем только кнопки
+					if u.CallbackQuery != nil {
+						log.Println("msg id:", bot.CurrentGames[u.FromChat().ID].MessageId)
+						// прилет из удалятора по таймайту
+						if u.CallbackQuery.ID == "delete" {
+							_, err := bot.BotApi.Send(tgbotapi.NewDeleteMessage(u.FromChat().ID, u.CallbackQuery.Message.MessageID))
+							if err != nil {
+								log.Println("error removing message")
+							}
+						} else if bot.CurrentGames[u.FromChat().ID].FirstPlayerId != u.CallbackQuery.From.ID {
+							bot.gameAccept(u, bot.CurrentGames[u.FromChat().ID])
 						}
+					}
+				} else {
+					if u.Message == nil {
+						if u.CallbackQuery != nil {
+							// ктото жмякает кнопки, возможно на старое приглашение. игнорим покамест
+						}
+					} else if bot.CurrentGames[u.FromChat().ID].messageCounter >= messageToGameRatio {
+						// запускаем если ктото в чате чото написал и счетчик сообщений дотикал
+						bot.CurrentGames[u.FromChat().ID].messageCounter = 0
 						bot.newGameInvite(u, bot.CurrentGames[u.FromChat().ID])
 						go func() {
 							select {
-							case <-game.GameStatusChanged:
+							case <-bot.CurrentGames[u.FromChat().ID].GameStatusChanged:
 								return
 							case <-time.After(30 * time.Minute):
 							}
@@ -55,24 +82,14 @@ func (bot *Bot) StartGaming() {
 									ID:   "delete",
 									From: &bot.BotApi.Self,
 									Message: &tgbotapi.Message{
-										MessageID: game.MessageId,
+										MessageID: bot.CurrentGames[u.FromChat().ID].MessageId,
 										Chat:      u.FromChat(),
 									},
 								},
 							}
 						}()
-					}
-				} else {
-					if u.CallbackQuery != nil {
-						log.Println("msg id:", game.MessageId)
-						if u.CallbackQuery.ID == "delete" {
-							_, err := bot.BotApi.Send(tgbotapi.NewDeleteMessage(u.FromChat().ID, u.CallbackQuery.Message.MessageID))
-							if err != nil {
-								log.Println("error removing message")
-							}
-						} else if game.FirstPlayerId != u.CallbackQuery.From.ID {
-							bot.gameAccept(u, game)
-						}
+					} else {
+						bot.CurrentGames[u.FromChat().ID].messageCounter++
 					}
 				}
 			}

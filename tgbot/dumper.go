@@ -2,10 +2,11 @@ package tgbot
 
 import (
 	"encoding/json"
-	"github.com/dyvdev/cybercum/swatter"
 	"log"
 	"os"
 	"time"
+
+	"github.com/dyvdev/cybercum/swatter"
 )
 
 const (
@@ -68,9 +69,10 @@ func (bot *Bot) LoadDump() error {
 	if err != nil {
 		bot.Swatter, err = swatter.NewFromDump(saveDumpDefault)
 		if err != nil {
-			log.Fatal("Error creating new swatter ", err)
+			log.Println("Error creating new swatter ", err)
+		} else {
+			needToSave = true
 		}
-		needToSave = true
 	}
 	if needToSave {
 		log.Println("saving dump...")

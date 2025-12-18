@@ -46,7 +46,6 @@ func (bot *Bot) Commands(update tgbotapi.Update) {
 		}
 	case commandGame:
 		chat.CanPlayGame = true
-		chat.Counter = 0
 		bot.GameUpdate(update)
 	}
 	if bot.IsCum(update.Message.Chat.ID, update.Message.From.ID) {

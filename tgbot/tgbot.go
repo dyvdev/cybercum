@@ -91,7 +91,7 @@ func (bot *Bot) Update(done <-chan bool) {
 						bot.SendPhotoReaction(update)
 					}
 				}
-				if update.CallbackQuery != nil && bot.Chats[update.FromChat().ID].CanPlayGame {
+				if bot.Chats[update.FromChat().ID].CanPlayGame {
 					bot.GameUpdate(update)
 				}
 			}
@@ -108,11 +108,6 @@ func (bot *Bot) ProcessMessage(update tgbotapi.Update) {
 		return
 	}
 	if utils.CheckForUrls(update.Message) {
-		return
-	}
-	if isTimeToTalk && bot.Chats[update.FromChat().ID].CanPlayGame {
-		chat.Counter = 0
-		bot.GameUpdate(update)
 		return
 	}
 	if chat.CanTalkNeuro {
