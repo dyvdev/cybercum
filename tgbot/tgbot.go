@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/dyvdev/cybercum/neurocum"
@@ -42,13 +43,14 @@ func NewBot() *Bot {
 }
 
 // Update обработка событий
-func (bot *Bot) Update(done <-chan bool) {
+func (bot *Bot) Update(wg *sync.WaitGroup, done <-chan bool) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	u.AllowedUpdates = []string{"message", "message_reaction", "message_reaction_count", "callback_query"}
 	updates := bot.BotApi.GetUpdatesChan(u)
 	ticker := time.NewTicker(25 * time.Millisecond)
 	go func() {
+		defer wg.Done()
 		for update := range updates {
 			select {
 			case <-done:

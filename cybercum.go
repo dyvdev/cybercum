@@ -1,11 +1,13 @@
 package cybercum
 
 import (
-	"github.com/dyvdev/cybercum/tgbot"
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+
+	"github.com/dyvdev/cybercum/tgbot"
 )
 
 func RunBot() {
@@ -18,8 +20,13 @@ func RunBot() {
 		log.Println("failed to start bot...")
 		return
 	}
-	bot.Update(done)
-	bot.Dumper(done)
-	<-sigc
-	done <- true
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	bot.Update(wg, done)
+	bot.Dumper(wg, done)
+	select {
+	case <-sigc:
+		close(done)
+	}
+	wg.Wait()
 }

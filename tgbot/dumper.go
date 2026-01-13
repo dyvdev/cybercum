@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/dyvdev/cybercum/swatter"
@@ -15,9 +16,10 @@ const (
 	saveDumpDefault = "blobs/default.blob"
 )
 
-func (bot *Bot) Dumper(done <-chan bool) {
+func (bot *Bot) Dumper(wg *sync.WaitGroup, done <-chan bool) {
 	ticker := time.NewTicker(dumpTick)
 	go func() {
+		defer wg.Done()
 		for {
 			select {
 			case <-done:
